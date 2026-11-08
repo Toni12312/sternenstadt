@@ -814,7 +814,7 @@ function newWorld(){
  [['🌳',120,420],['🌳',1150,500],['🌲',1700,300],['🌸',480,420],['⛲',760,820],['🌴',260,1150],['🌴',700,1160],['🌻',1100,780],['🌳',1500,700],['🚗',560,800],['🎡',1500,1000],['🌷',1000,460]].forEach(m=>S.mapItems.push({id:uid(),k:m[0],x:m[1],y:m[2],s:m[0]==='🎡'?3:1.6}));
 }
 function load(){const d=lsGet(SKEY);if(d&&d.v===1&&Array.isArray(d.buildings)){S=d;}else newWorld();
- S.ents=S.ents.filter(e=>!e.visitor);S.ents.forEach(e=>{if(e.away){delete e.away;e.loc={b:null};e.x=GATE.x+rnd(10,60);e.y=GATE.y+rnd(20,50);}});}
+ S.buildings=S.buildings.filter(b=>!b.remote);S.buildings.forEach(b=>delete b.shared);S.ents=S.ents.filter(e=>!e.visitor);S.ents.forEach(e=>{if(e.loc&&e.loc.b&&String(e.loc.b).startsWith('R:')){e.loc={b:null};e.x=GATE.x+rnd(10,60);e.y=GATE.y+rnd(20,50);}if(e.away){delete e.away;e.loc={b:null};e.x=GATE.x+rnd(10,60);e.y=GATE.y+rnd(20,50);}});}
 let saveT=null;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>lsSet(SKEY,S),400);}
 const bById=id=>S.buildings.find(b=>b.id===id);
@@ -1135,7 +1135,7 @@ function mkBuilding(b){const d=BT[b.t];const el=document.createElement('div');el
  el.innerHTML=`<div class="bsv" style="width:100%;height:100%"></div><div class="blabel">${d.n}</div>`+(n?`<div class="badge" style="right:${dm.pad.toFixed(0)}px;top:${(Math.round(d.w*0.5)*0.42+16).toFixed(0)}px">👥 ${n}</div>`:'');el._m=b;el._kind='bld';mapPlace(el);attach(el,'bld',b.id);return el;}
 function renderMap(){
  const w=$('#world');w.innerHTML='';camDirty=true;
- S.buildings.forEach(b=>w.appendChild(mkBuilding(b)));
+ S.buildings.forEach(b=>{if(!b.remote)w.appendChild(mkBuilding(b));});
  S.mapItems.forEach(it=>w.appendChild(mkItem(it,false)));
  entsHere().forEach(e=>w.appendChild(mkEnt(e)));
 }
@@ -1145,7 +1145,7 @@ function renderRoom(){
  const b=bById(V.b);if(!b){goMap();return;}const fl=b.floors[V.f];const d=BT[b.t];
  setU();
  const room=$('#room');const outdoor=fl.w==='sky'||fl.w==='sea';['L','B','R'].forEach(k=>{const w=room.querySelector('.wall'+k);if(w)w.className='w3 wall'+k+' wp-'+(outdoor&&k!=='B'?'hedge':fl.w);});const ce=room.querySelector('.ceil');if(ce)ce.className='w3 ceil'+(outdoor?' wp-sky':'');const f3=$('#floor3d');if(f3)f3.innerHTML=floorSVG(fl.f);
- $('#roomLabel').textContent=d.e+' '+d.n+' – '+floorLabel(V.f,fl);
+ $('#roomLabel').textContent=(b.remote?'🤝 Bei deinem Freund: ':b.shared&&NET.dc?'🤝 Gemeinsam: ':'')+d.e+' '+d.n+' – '+floorLabel(V.f,fl);
  $('#title').textContent=d.e+' '+d.n;
  const rl=$('#rl');rl.innerHTML='';
  const ch=chain(b),ci=ch.indexOf(V.f);
@@ -1339,7 +1339,7 @@ function endDrag(d,ev){
    let parent=null;for(const n of under){const it=items.find(i=>i.id===n.dataset.id);if(it&&it!==d.o&&topOf(it)>0.8&&!isAbove(it,d.o,items)&&!(isAbove(it,it,[])&&0)){parent=it;break;}}
    if(parent){d.o.on=parent.id;d.o.x=clamp(d.o.x,parent.x-8*parent.s,parent.x+8*parent.s);d.o.y=Math.max(46.2,parent.y-0.6);toast('Steht jetzt auf: '+(MODELS[modelOf(parent)]||'Möbel'));}else d.o.on=null;}
   const n=mkItem(d.o,true);d.el.replaceWith(n);
-  items.filter(i=>i!==d.o&&isAbove(i,d.o,items)).forEach(i=>{const ce=document.querySelector(`#rl [data-id="${i.id}"]`);if(ce)ce.replaceWith(mkItem(i,true));});}
+  items.filter(i=>i!==d.o&&isAbove(i,d.o,items)).forEach(i=>{const ce=document.querySelector(`#rl [data-id="${i.id}"]`);if(ce)ce.replaceWith(mkItem(i,true));hSync(i);});hSync(d.o);}
  else posItem(d.el,d.o,false);
  pop(360);save();
 }
@@ -1379,7 +1379,7 @@ function goSleep(e){
     toast(e.name+' geht '+bedName(it)+': '+floorLabel(fi,b.floors[fi]));
     walkTo(e,tx,fx?(role==='lift'?47.2:49):e.y,()=>{e.loc={b:b.id,f:fi};placeOn(e,it);if(V.sel===e.id)V.sel=null;save();liftOpen(false);setTimeout(()=>{renderRoom();renderAction();},500);});return;}}
  }else{let best=null;
-  S.buildings.forEach(b=>b.floors.forEach((fl,fi)=>bedsIn(b,fi).forEach(it=>{if(!isFree(it,e))return;const d=BT[b.t];const dist=Math.hypot(b.x+d.w/2-e.x,b.y+d.h-e.y);if(!best||dist<best.dist)best={b,fi,it,dist};})));
+  S.buildings.forEach(b=>!b.remote&&b.floors.forEach((fl,fi)=>bedsIn(b,fi).forEach(it=>{if(!isFree(it,e))return;const d=BT[b.t];const dist=Math.hypot(b.x+d.w/2-e.x,b.y+d.h-e.y);if(!best||dist<best.dist)best={b,fi,it,dist};})));
   if(best){const d=BT[best.b.t];toast(e.name+' geht schlafen: '+d.n+' 🛏️');walkTo(e,best.b.x+d.w/2,best.b.y+d.h-4,()=>{e.loc={b:best.b.id,f:best.fi};placeOn(e,best.it);if(V.sel===e.id)V.sel=null;save();if(V.mode==='map')render();});return;}
  }
  e.sleep=true;e.bed=null;e.sr=false;refreshEnt(e);toast(e.name+' schläft hier 💤 (kein freies Bett)');save();renderAction();
@@ -1447,14 +1447,14 @@ function itemAction(it,a){pop(480);const inRoom=V.mode==='room';const el=documen
   case 'rot':{const a0=angOf(it),a1=a0+45;delete it.rot;const t0=performance.now(),sel=inRoom?'#rl':'#world';
    const step=now=>{const p=Math.min(1,(now-t0)/380);it.ang=a0+(a1-a0)*(p<.5?2*p*p:1-2*(1-p)*(1-p));const el2=document.querySelector(`${sel} [data-id="${it.id}"]`);if(el2)el2.replaceWith(mkItem(it,inRoom));
     if(p<1)requestAnimationFrame(step);else{it.ang=((a1%360)+360)%360;const el3=document.querySelector(`${sel} [data-id="${it.id}"]`);if(el3)el3.replaceWith(mkItem(it,inRoom));
-     if(inRoom){const items=bById(V.b).floors[V.f].items;items.filter(i=>i!==it&&isAbove(i,it,items)).forEach(i=>{const ce=document.querySelector(`#rl [data-id="${i.id}"]`);if(ce)posItem(ce,i,true);});}save();}};
+     if(inRoom){const items=bById(V.b).floors[V.f].items;items.filter(i=>i!==it&&isAbove(i,it,items)).forEach(i=>{const ce=document.querySelector(`#rl [data-id="${i.id}"]`);if(ce)posItem(ce,i,true);});hSync(it);}save();}};
    requestAnimationFrame(step);return;}
   case 'color':it.c=PAL[(PAL.indexOf(it.c)+1)%PAL.length];break;
   case 'del':askDelete(inRoom?'item':'mitem',it);return;
   case 'close':V.selItem=null;if(el)el.style.outline='';renderAction();return;
  }
  if(el){const n=mkItem(it,inRoom);el.replaceWith(n);}
- if(inRoom){const items=bById(V.b).floors[V.f].items;items.filter(i=>i!==it&&isAbove(i,it,items)).forEach(i=>{const ce=document.querySelector(`#rl [data-id="${i.id}"]`);if(ce)posItem(ce,i,true);});}
+ if(inRoom){const items=bById(V.b).floors[V.f].items;items.filter(i=>i!==it&&isAbove(i,it,items)).forEach(i=>{const ce=document.querySelector(`#rl [data-id="${i.id}"]`);if(ce)posItem(ce,i,true);});hSync(it);}
  save();
 }
 
@@ -1466,7 +1466,7 @@ function askDelete(kind,o){
  const back=()=>render();
  if(kind==='ent'){dialog(`<h2>${esc(o.name)} wegschicken?</h2><p>Dann ist ${o.kind==='person'?'die Figur':'das Tier'} weg.</p>`,[['Ja, wegschicken',()=>{S.ents=S.ents.filter(e=>e!==o);if(V.sel===o.id)V.sel=null;save();render();},'b2'],['Nein, behalten',back,'b4']]);return;}
  if(kind==='bld'){const d=BT[o.t];dialog(`<h2>${d.e} ${d.n} abreißen?</h2><p>Alle Möbel darin sind dann weg. Figuren und Tiere kommen nach draußen.</p>`,[['Ja, abreißen',()=>{S.ents.forEach(e=>{if(e.loc.b===o.id){e.loc={b:null};e.x=o.x+d.w/2+rnd(-40,40);e.y=o.y+d.h+30;e.sleep=false;}});S.buildings=S.buildings.filter(b=>b!==o);save();render();},'b2'],['Nein, stehen lassen',back,'b4']]);return;}
- if(kind==='item'){const b=bById(V.b);b.floors[V.f].items.forEach(i=>{if(i.on===o.id)i.on=null;});b.floors[V.f].items=b.floors[V.f].items.filter(i=>i!==o);}
+ if(kind==='item'){const b=bById(V.b);b.floors[V.f].items.forEach(i=>{if(i.on===o.id){i.on=null;hSync(i);}});hSync(o,true);b.floors[V.f].items=b.floors[V.f].items.filter(i=>i!==o);}
  if(kind==='mitem'){S.mapItems=S.mapItems.filter(i=>i!==o);}
  V.selItem=null;pop(250);save();render();
 }
@@ -1507,7 +1507,8 @@ function drawerPick(kind,ds){pop(660);const c=viewCenter();
  if(kind==='furn'){const b=bById(V.b),fl=b.floors[V.f];let it;
   if(ds.big){const bd=BIGDEF[ds.big]||[10,10];it={id:uid(),big:ds.big,x:rnd(25,75),y:WALLBIG[ds.big]?38:rnd(56,64),c:pick(PAL),s:1,w:bd[0],h:bd[1]};}
   else it={id:uid(),k:ds.k,x:rnd(20,80),y:WALLEMO.has(ds.k)?32:rnd(54,62),s:1};
-  fl.items.push(it);const el=mkItem(it,true);el.classList.add('pop');$('#rl').appendChild(el);save();return;}
+  if(isSharedB(b))it.id=uid()+'x'+Math.random().toString(36).slice(2,6);
+  fl.items.push(it);const el=mkItem(it,true);el.classList.add('pop');$('#rl').appendChild(el);save();hSync(it);return;}
  if(kind==='people'){
   if(ds.new){closeDrawer();openEditor(null);return;}
   if(ds.rand){const L=randomLook();addEntHere(makePerson(L,curLoc(),c[0],c[1]));toast(L.name+' ist da!');openDrawer('people',0);return;}
@@ -1515,7 +1516,7 @@ function drawerPick(kind,ds){pop(660);const c=viewCenter();
   if(ds.p){const e=eById(ds.p);e.loc=curLoc();e.x=c[0];e.y=c[1];e.sleep=false;save();closeDrawer();render();toast(e.name+' ist jetzt hier');}
   return;}
  if(kind==='animals'){const e=makeAnimal(ds.a,curLoc(),c[0]+(V.mode==='map'?rnd(-60,60):0),c[1]);addEntHere(e);return;}
- if(kind==='walls'){const fl=bById(V.b).floors[V.f];if(ds.w)fl.w=ds.w;if(ds.f)fl.f=ds.f;save();renderRoom();}
+ if(kind==='walls'){const b=bById(V.b),fl=b.floors[V.f];if(ds.w)fl.w=ds.w;if(ds.f)fl.f=ds.f;save();renderRoom();if(isSharedB(b)&&NET.dc)netSend({t:'hfl',bid:b.remote?b.origId:b.id,f:V.f,w:fl.w,fl:fl.f});}
 }
 function curLoc(){return V.mode==='map'?{b:null}:{b:V.b,f:V.f};}
 
@@ -1748,6 +1749,8 @@ function netSend(m){try{if(NET.dc&&NET.dc.readyState==='open'){NET.dc.send(JSON.
 function peerCleanup(){const was=!!(NET.dc||NET.pc);
  try{NET.pc&&NET.pc.close();}catch(e){}NET.pc=null;NET.dc=null;NET.role=null;
  let gone=0,back=0;S.ents=S.ents.filter(e=>{if(e.visitor){gone++;return false;}return true;});
+ S.ents.forEach(e=>{if(e.loc&&e.loc.b&&String(e.loc.b).startsWith('R:')){e.loc={b:null};e.x=GATE.x+rnd(10,70);e.y=GATE.y+rnd(20,60);e.sleep=false;e.sit=false;back++;}});
+ const wasRemote=V.mode==='room'&&String(V.b).startsWith('R:');S.buildings=S.buildings.filter(b=>!b.remote);S.buildings.forEach(b=>delete b.shared);if(wasRemote){V.mode='map';V.b=null;}
  S.ents.forEach(e=>{if(e.away){delete e.away;e.loc={b:null};e.x=GATE.x+rnd(10,70);e.y=GATE.y+rnd(20,60);e.sleep=false;back++;}});
  netUI();if(was){save();render();if(gone||back)toast('🤝 Verbindung beendet – alle sind wieder zu Hause');else toast('🤝 Verbindung beendet');}
  if($('#friends'))showFriends();}
@@ -1781,8 +1784,33 @@ function netMsg(m){
  if(m.t==='return'){const e=S.ents.find(x=>x.id===m.id&&x.away);if(e){delete e.away;placeAtGate(e);e.sleep=false;save();if(entsHere().includes(e))render();pop(800);toast('🏠 '+e.name+' ist wieder zu Hause!');}return;}
  if(m.t==='recall'){const e=S.ents.find(x=>x.visitor&&x.origId===m.id);if(e)sendHome(e);return;}
  if(m.t==='gift'){receiveGift(m.g);return;}
+ if(m.t==='house'){receiveHouse(m);return;}
+ if(m.t==='hitem'){applyHItem(m);return;}
+ if(m.t==='hfl'){applyHFl(m);return;}
+ if(m.t==='party'){party();return;}
  if(m.t==='emoji'){const d=document.createElement('div');d.className='bigemo';d.textContent=m.e;$('#app').appendChild(d);setTimeout(()=>d.remove(),2300);pop(1000);setTimeout(()=>pop(1200),120);toast('📞 Dein Freund sagt: '+m.e);return;}
 }
+function isSharedB(b){return !!(b&&NET.dc&&(b.remote||b.shared));}
+function hSync(it,del){const b=bById(V.b);if(!isSharedB(b)||!it)return;netSend({t:'hitem',bid:b.remote?b.origId:b.id,f:V.f,item:it,del:!!del});}
+function sharedB(bid){let b=bById(bid);if(b&&b.shared)return b;b=bById('R:'+bid);return b||null;}
+function inviteHouse(){if(V.mode!=='room'){toast('Geh zuerst in ein Haus');return;}const b=bById(V.b);if(!b||b.remote){toast('Das geht nur mit deinen eigenen Häusern');return;}
+ b.shared=true;if(netSend({t:'house',b:JSON.parse(JSON.stringify(b)),f:V.f})){toast('🏠 Einladung ins Haus geschickt!');renderRoom();}}
+function receiveHouse(m){const src=m.b;const id='R:'+src.id;S.buildings=S.buildings.filter(x=>x.id!==id);
+ const rb=JSON.parse(JSON.stringify(src));rb.id=id;rb.origId=src.id;rb.remote=true;S.buildings.push(rb);
+ const d=BT[rb.t]||{n:'Haus',e:'🏠'};
+ dialog(`<div class="logo">🏠</div><h2>Einladung!</h2><p>Dein Freund lädt dich in sein Haus ein: <b>${d.e} ${d.n}</b>. Ihr könnt es zusammen einrichten.</p>`,[['🚪 Reingehen',()=>{enterBuilding(id,m.f||0);toast('🤝 Was du hier veränderst, sieht dein Freund auch');},''],['Später',null,'b4']]);}
+function applyHItem(m){const b=sharedB(m.bid);if(!b||!b.floors[m.f])return;const fl=b.floors[m.f];const i=fl.items.findIndex(x=>x.id===(m.item&&m.item.id));
+ if(m.del){if(i>=0)fl.items.splice(i,1);}else if(i>=0)fl.items[i]=m.item;else fl.items.push(m.item);
+ if(V.mode==='room'&&V.b===b.id&&V.f===m.f){const el=document.querySelector(`#rl [data-id="${m.item.id}"]`);if(m.del){if(el)el.remove();}else{const n=mkItem(fl.items.find(x=>x.id===m.item.id),true);if(el)el.replaceWith(n);else{n.classList.add('pop');$('#rl').appendChild(n);}}}
+ if(!b.remote)save();}
+function applyHFl(m){const b=sharedB(m.bid);if(!b||!b.floors[m.f])return;b.floors[m.f].w=m.w;b.floors[m.f].f=m.fl;if(V.mode==='room'&&V.b===b.id&&V.f===m.f)renderRoom();if(!b.remote)save();}
+const PARTY_TUNE=[523,659,784,1047,784,659,698,880,784,659,587,523];
+function party(){const list=entsHere();pop(1);
+ if(!S.muted){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const t0=actx.currentTime+0.05;PARTY_TUNE.forEach((fq,i)=>{const o=actx.createOscillator(),g=actx.createGain();o.type='triangle';o.frequency.value=fq;const t=t0+i*0.28;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.07,t+0.03);g.gain.exponentialRampToValueAtTime(0.0001,t+0.26);o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+0.28);});}catch(e){}}
+ list.forEach((e,i)=>{const el=document.querySelector(`.ent[data-id="${e.id}"]`);if(!el)return;if(e.sleep){e.sleep=false;e.bed=null;refreshEnt(e);}e.sit=false;
+  setTimeout(()=>{const el2=document.querySelector(`.ent[data-id="${e.id}"]`);if(!el2)return;if(e.kind==='person'){playAnim(el2,'dance',3400);animAng(e,[0,35,-35,35,-35,35,-35,0],3400);}else playAnim(el2,'hop',1300);},i*60);
+  [0,900,1800,2700].forEach(t=>setTimeout(()=>spawnFloat(e,pick(['🎵','🎶','🎉','✨','⭐'])),t+i*80));});
+ toast('🎉 Party! Alle tanzen!');}
 function centerMapSoft(e){const q=mp(e.x,e.y);if(q.sx<0||q.sx>VW||q.sy<horizonY()||q.sy>VH)centerMap(e.x,e.y-60);}
 const GIFTS='🎂 🍕 🍦 🧁 🍩 🍿 🧸 🎈 ⚽ 🪀 🎨 🎸 🎹 🥁 🛋️ 🪑 📺 🪴 🌻 🌸 🌳 💡 📚 🎁 ⭐ 🌈 🛟 ⛲'.split(' ');
 const GIFT_ANIMALS=['capybara','meerschwein','hase','katze','hund','koala','pinguin','papagei','schildi','ente'];
@@ -1803,10 +1831,13 @@ function showFriends(tab){
  if(tab==='main'){const away=S.ents.filter(e=>e.away),vis=S.ents.filter(e=>e.visitor);
   friendsOverlay(`<div class="logo">🤝</div><h2>Verbunden!</h2>
    <button class="bigbtn b3" id="fVisit">🚪 Auf Besuch schicken</button><button class="bigbtn b2" id="fGift">🎁 Geschenk schicken</button><button class="bigbtn" id="fEmo">📞 Emoji schicken</button>
+   ${V.mode==='room'&&!String(V.b).startsWith('R:')?'<button class="bigbtn b3" id="fHouse">🏠 Dieses Haus gemeinsam einrichten</button>':''}<button class="bigbtn b2" id="fParty">🎉 Party – alle tanzen!</button>
    ${away.length?`<p style="margin-top:12px"><b>Gerade auf Besuch:</b></p><div class="row" style="justify-content:center">${away.map(e=>`<button class="chb" data-recall="${e.id}">${esc(e.name)} – 🏠 zurückholen</button>`).join('')}</div>`:''}
    ${vis.length?`<p style="margin-top:12px"><b>Besuch bei dir:</b> ${vis.map(e=>esc(e.name.replace(' (Besuch)',''))).join(', ')}</p>`:''}
    <button class="bigbtn b4" id="fBye">🔌 Verbindung trennen</button><button class="bigbtn b4" id="fX">Schließen</button>`);
   $('#fVisit').onclick=()=>{pop();showFriends('visit');};$('#fGift').onclick=()=>{pop();showFriends('gift');};$('#fEmo').onclick=()=>{pop();showFriends('emo');};
+  const fh=$('#fHouse');if(fh)fh.onclick=()=>{pop();inviteHouse();closeFriends();};
+  $('#fParty').onclick=()=>{if(netSend({t:'party'})){closeFriends();party();}};
   document.querySelectorAll('[data-recall]').forEach(b=>b.onclick=()=>{pop();netSend({t:'recall',id:b.dataset.recall});toast('Ruft nach Hause …');});
   $('#fBye').onclick=()=>{pop();peerClose();};$('#fX').onclick=()=>{pop();closeFriends();};return;}
  const back='<button class="bigbtn b4" id="fBack">Zurück</button>';
@@ -1829,7 +1860,7 @@ function showRules(){
  <li>🏠 Figur auf ein Haus ziehen = sie geht hinein. In den Aufzug ziehen = sie fährt mit.</li>
  <li>🛏️ Figur aufs Bett ziehen = sie schläft. Auf Stuhl oder Sofa = sie setzt sich. In den Pool = sie schwimmt.</li>
  <li>🐾 Tier antippen und 🐾 drücken = es läuft der nächsten Figur hinterher.</li>
- <li>🤝 <b>Mit einem anderen Tablet spielen</b> (gleiches WLAN): oben auf 🤝 tippen. Ein Tablet lädt ein, das andere scannt. Dann könnt ihr Figuren auf Besuch schicken, Geschenke und Emojis senden.</li>
+ <li>🤝 <b>Mit einem anderen Tablet spielen</b> (gleiches WLAN): oben auf 🤝 tippen. Ein Tablet lädt ein, das andere scannt. Dann könnt ihr Figuren auf Besuch schicken, Geschenke und Emojis senden, ein Haus gemeinsam einrichten oder eine Party feiern.</li>
  <li>🗑️ Etwas weg haben? In den Mülleimer ziehen.</li>
  </ul><h2>⏰ Spielzeit</h2><ul>
  <li>Jeden Tag <b>30 Minuten</b>.</li>
