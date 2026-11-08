@@ -104,9 +104,12 @@ button{font-family:inherit;cursor:pointer;border:none}
 .ent.animal.walking .pose{animation:waddle .3s infinite}
 .capyleg{transform-box:view-box}
 img.capyleg{transform-box:border-box}
-.ent.walking .pupp{animation:capyBob .19s infinite}
-.ent.walking .pupp .capyleg.a{animation:pupA .42s infinite ease-in-out}.ent.walking .pupp .capyleg.b{animation:pupB .42s infinite ease-in-out}
-@keyframes pupA{0%,100%{transform:rotate(10deg)}50%{transform:rotate(-10deg)}}@keyframes pupB{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+.ent.walking .pupp{animation:pupBob .18s infinite ease-in-out}
+@keyframes pupBob{0%,100%{translate:0 0}50%{translate:0 -2%}}
+.ent.walking .pupp .capyleg.a{animation:pupA .36s infinite ease-in-out}.ent.walking .pupp .capyleg.b{animation:pupB .36s infinite ease-in-out}
+@keyframes pupA{0%,100%{transform:rotate(17deg)}50%{transform:rotate(-17deg)}}@keyframes pupB{0%,100%{transform:rotate(-17deg)}50%{transform:rotate(17deg)}}
+.ent.pup.walking .pose{animation:none!important}
+.ent.pup .art{transition:none}
 .ent.walking .capyleg.a{animation:capyA .38s infinite ease-in-out}.ent.walking .capyleg.b{animation:capyB .38s infinite ease-in-out}
 .ent.walking .art svg[data-noshade]{animation:capyBob .19s infinite}
 @keyframes capyA{0%,100%{transform:rotate(14deg)}50%{transform:rotate(-14deg)}}
@@ -1096,7 +1099,7 @@ function entHTML(e){
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function posEnt(el,e){if(V.mode==='map'){el._m=e;el._kind='ent';mapPlace(el);}else{const q=toScreen(e.x,e.y);el.style.left=q.sx+'%';el.style.top=q.sy+'%';el.style.setProperty('--k',q.k.toFixed(3));let z=Math.round(q.sy*10)+3;
  if((e.sleep||e.sit||e.swim)&&e.bed){const b=bById(V.b);const it=b&&b.floors[V.f].items.find(i=>i.id===e.bed);if(it)z=Math.round(toScreen(it.x,it.y).sy*10)+6;}el.style.zIndex=z;}}
-function entCls(e){return 'ent '+e.kind+(e.sleep?' sleep':'')+(e.sleep&&e.sr?' sr':'')+(e.sit?' sit':'')+(e.sit&&!e.bed?' floor':'')+(e.swim?' swim':'')+(V.sel===e.id?' sel':'');}
+function entCls(e){return 'ent '+e.kind+(e.kind==='animal'&&(ANIMALS[e.a]||{}).parts?' pup':'')+(e.sleep?' sleep':'')+(e.sleep&&e.sr?' sr':'')+(e.sit?' sit':'')+(e.sit&&!e.bed?' floor':'')+(e.swim?' swim':'')+(V.sel===e.id?' sel':'');}
 function mkEnt(e){const el=document.createElement('div');el.className=entCls(e);el.dataset.id=e.id;
  if(e.kind==='person')el.style.setProperty('--fh','calc(var(--u)*'+(30*(e.L.h||1))+')');
  el.innerHTML=entHTML(e);posEnt(el,e);attach(el,'ent',e.id);return el;}
