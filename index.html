@@ -1092,7 +1092,7 @@ let pan=null;
 function entHTML(e){
  if(e.kind==='person'){const L=e.L,hh=30*(L.h||1);
   return `<div class="shd"></div><div class="pose"><div class="bz"><div class="art" style="height:calc(var(--u)*${hh});width:calc(var(--u)*${hh*0.5})"><div class="br" style="width:100%;height:100%;animation-delay:-${(Math.random()*3).toFixed(2)}s">${personSVG(L)}</div></div></div></div><div class="zz">💤</div><div class="nm">${esc(e.name)}</div>`;}
- const A=ANIMALS[e.a]||ANIMALS.hund;let art;
+ const A0=ANIMALS[e.a]||ANIMALS.hund;const A=Object.assign({},A0,{sz:A0.sz*(e.s||1)});let art;
  const dl=`animation-delay:-${(Math.random()*3).toFixed(2)}s`;
  if(A.img)art=`<div class="art${e.dir?' fl':''}" style="height:calc(var(--u)*${A.sz});width:calc(var(--u)*${A.sz*A.ar})"><div class="br" style="width:100%;height:100%;${dl}"><div class="pupp" style="position:relative;width:100%;height:100%;transform:scaleX(-1);filter:drop-shadow(0 1px 1px #0003)">${PUPPS[A.pup].map(p=>`<img src="${p.src}" alt="" draggable="false"${p.ph?` class="capyleg ${p.ph}"`:''} style="position:absolute;left:${p.l}%;top:${p.t}%;width:${p.w}%;height:${p.h}%;${p.ph?`transform-origin:${p.ox}% ${p.oy}%;`:''}">`).join('')}</div></div></div>`;
  else if(A.s)art=`<div class="art${e.dir?' fl':''}" style="height:calc(var(--u)*${A.sz});width:calc(var(--u)*${A.sz*A.ar})"><div class="br" style="width:100%;height:100%;${dl}">${ASVG[A.s].replace('<svg','<svg width="100%" height="100%"')}</div></div>`;
@@ -1425,7 +1425,7 @@ function renderAction(){
  const e=V.sel&&eById(V.sel);
  if(e&&document.querySelector(`.ent[data-id="${e.id}"]`)){
   h=`<span class="an">${e.kind==='person'?'🧑':'🐾'} ${esc(e.name)}</span><button class="ab" data-a="sleep">${e.sleep?'☀️':'💤'}</button><button class="ab" data-a="dance">💃</button>`+
-   (e.kind==='person'?`<button class="ab" data-a="wave">👋</button><button class="ab" data-a="jump">🦘</button><button class="ab" data-a="happy">🙌</button><button class="ab" data-a="spin">🌀</button><button class="ab" data-a="sing">🎤</button><button class="ab" data-a="sit">🪑</button><button class="ab" data-a="eat">🍎</button>${e.visitor?'<button class="ab" data-a="home">🏠</button>':'<button class="ab" data-a="edit">✏️</button>'}`:`<button class="ab" data-a="love">❤️</button><button class="ab" data-a="jump">🦘</button><button class="ab" data-a="spin">🌀</button><button class="ab" data-a="roll">🤸</button><button class="ab" data-a="follow">${e.follow?'🛑':'🐾'}</button><button class="ab" data-a="feed">🥕</button>${e.visitor?'<button class="ab" data-a="home">🏠</button>':''}`)+`<button class="ab" data-a="close">✖️</button>`;
+   (e.kind==='person'?`<button class="ab" data-a="wave">👋</button><button class="ab" data-a="jump">🦘</button><button class="ab" data-a="happy">🙌</button><button class="ab" data-a="spin">🌀</button><button class="ab" data-a="sing">🎤</button><button class="ab" data-a="sit">🪑</button><button class="ab" data-a="eat">🍎</button>${e.visitor?'<button class="ab" data-a="home">🏠</button>':'<button class="ab" data-a="edit">✏️</button>'}`:`<button class="ab" data-a="love">❤️</button><button class="ab" data-a="jump">🦘</button><button class="ab" data-a="spin">🌀</button><button class="ab" data-a="roll">🤸</button><button class="ab" data-a="follow">${e.follow?'🛑':'🐾'}</button><button class="ab" data-a="feed">🥕</button><button class="ab" data-a="smaller">➖</button><button class="ab" data-a="bigger">➕</button>${e.visitor?'<button class="ab" data-a="home">🏠</button>':''}`)+`<button class="ab" data-a="close">✖️</button>`;
   ab.innerHTML=h;ab.classList.add('open');
   ab.querySelectorAll('.ab').forEach(x=>x.onclick=()=>entAction(e,x.dataset.a));return;}
  const it=V.selItem&&(V.mode==='room'?getObj('item',V.selItem):getObj('mitem',V.selItem));
@@ -1442,6 +1442,7 @@ function entAction(e,a){const el=document.querySelector(`.ent[data-id="${e.id}"]
   case 'jump':playAnim(el,'jump',1300);break;
   case 'happy':playAnim(el,'happy',1400);spawnFloat(e,'✨');break;
   case 'spin':if(e.kind==='person')animAng(e,[0,360],1100);else playAnim(el,'spin',1050);break;
+  case 'smaller':case 'bigger':{e.s=Math.round(clamp((e.s||1)*(a==='bigger'?1.2:1/1.2),0.4,3.5)*100)/100;refreshEnt(e);toast(e.name+': '+Math.round(e.s*100)+' %');break;}
   case 'follow':if(e.follow){e.follow=null;toast(e.name+' bleibt hier');}else{const ps=entsHere().filter(o=>o.kind==='person');if(!ps.length){toast('Hier ist keine Figur zum Folgen');break;}const t=nearestOf(ps,e);e.follow=t.id;e.sleep=false;refreshEnt(e);toast(e.name+' läuft '+t.name+' hinterher 🐾');spawnBubble(e,'❤️');}break;
   case 'roll':playAnim(el,'roll',850);spawnFloat(e,'⭐');break;
   case 'sing':playAnim(el,'sing',3600);[0,700,1400,2100,2800].forEach((t,i)=>setTimeout(()=>spawnFloat(e,i%2?'🎶':'🎵'),t));break;
