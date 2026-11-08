@@ -20,6 +20,9 @@ button{font-family:inherit;cursor:pointer;border:none}
 #title{flex:1;font-weight:800;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tbtn{background:#ffffff33;color:#fff;border-radius:16px;height:44px;padding:0 14px;font-size:18px;font-weight:700;white-space:nowrap}
 .tbtn:active{transform:scale(.95)}
+#friendBtn.on{background:#10b981}
+.bigemo{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:min(30vw,200px);z-index:120;pointer-events:none;animation:bigemo 2.2s forwards}
+@keyframes bigemo{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}20%{transform:translate(-50%,-50%) scale(1.15);opacity:1}35%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-80%) scale(.9);opacity:0}}
 #clock{background:#fff;color:#7c3aed;border-radius:16px;height:44px;padding:0 12px;display:flex;align-items:center;font-weight:800;font-size:18px;white-space:nowrap}
 #clock.low{background:#fde047;color:#7c2d12}
 #stage{flex:1;position:relative;overflow:hidden;isolation:isolate}
@@ -289,6 +292,7 @@ input[type=range]{width:100%;height:40px;accent-color:#7c3aed}
   <div id="topbar">
     <button class="tbtn" id="backBtn" style="display:none">⬅️ Karte</button>
     <div id="title">🌟 Sternenstadt</div>
+    <button class="tbtn" id="friendBtn" title="Freunde">🤝</button>
     <button class="tbtn" id="todBtn">☀️ Tag</button>
     <button class="tbtn" id="muteBtn">🔊</button>
     <div id="clock">⏰ 30 Min</div>
@@ -762,7 +766,8 @@ function newWorld(){
  S.ents.push(makeAnimal('capybara',{b:null},640,700));S.ents.push(makeAnimal('hund',{b:null},820,720));S.ents.push(makeAnimal('katze',{b:null},300,700));
  [['🌳',120,420],['🌳',1150,500],['🌲',1700,300],['🌸',480,420],['⛲',760,820],['🌴',260,1150],['🌴',700,1160],['🌻',1100,780],['🌳',1500,700],['🚗',560,800],['🎡',1500,1000],['🌷',1000,460]].forEach(m=>S.mapItems.push({id:uid(),k:m[0],x:m[1],y:m[2],s:m[0]==='🎡'?3:1.6}));
 }
-function load(){const d=lsGet(SKEY);if(d&&d.v===1&&Array.isArray(d.buildings)){S=d;}else newWorld();}
+function load(){const d=lsGet(SKEY);if(d&&d.v===1&&Array.isArray(d.buildings)){S=d;}else newWorld();
+ S.ents=S.ents.filter(e=>!e.visitor);S.ents.forEach(e=>{if(e.away){delete e.away;e.loc={b:null};e.x=GATE.x+rnd(10,60);e.y=GATE.y+rnd(20,50);}});}
 let saveT=null;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>lsSet(SKEY,S),400);}
 const bById=id=>S.buildings.find(b=>b.id===id);
@@ -778,7 +783,7 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show'
 function floorLabel(i,fl){if(fl.side)return fl.n;return (i===0?'Erdgeschoss':i+'. Etage')+' · '+fl.n;}
 function chain(b){return b.floors.map((f,i)=>f.side?-1:i).filter(i=>i>=0);}
 function layer(){return V.mode==='map'?$('#world'):$('#rl');}
-function entsHere(){return S.ents.filter(e=>V.mode==='map'?!e.loc.b:(e.loc.b===V.b&&e.loc.f===V.f));}
+function entsHere(){return S.ents.filter(e=>!e.away&&(V.mode==='map'?!e.loc.b:(e.loc.b===V.b&&e.loc.f===V.f)));}
 function roomRect(){return $('#room').getBoundingClientRect();}
 function setU(){const r=$('#room');const u=Math.min(r.clientHeight/100,r.clientWidth/150)*1.3;r.style.setProperty('--u',u+'px');}
 function spawnFloat(e,txt){const L=layer();const el=document.createElement('div');el.className='float';el.textContent=txt;
@@ -987,6 +992,10 @@ function drawGround(){
    Lp.push(P(pts[i][0]-dy*w,pts[i][1]+dx*w));Rp.push(P(pts[i][0]+dy*w,pts[i][1]-dx*w));}
   g.beginPath();Lp.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));for(let i=Rp.length-1;i>=0;i--)g.lineTo(Rp[i][0],Rp[i][1]);g.closePath();g.fillStyle='#e9d7a5';g.fill();g.strokeStyle='#d4bd85';g.lineWidth=1.5;g.stroke();
   if(!ri){g.strokeStyle='#ffffffbb';for(let i=0;i<pts.length-1;i+=2){const a=mp(pts[i][0],pts[i][1]),b=mp(pts[i+1][0],pts[i+1][1]);g.lineWidth=3*a.k;g.beginPath();g.moveTo(a.sx,a.sy);g.lineTo(b.sx,b.sy);g.stroke();}}});
+ {const L=mp(GATE.x-45,GATE.y),R=mp(GATE.x+45,GATE.y);if(L.k>0.15&&L.sy>hz){const H=110,k=L.k;
+  g.fillStyle='#7c3aed';g.fillRect(L.sx-5*k,L.sy-H*k,10*k,H*k);g.fillRect(R.sx-5*R.k,R.sy-H*R.k,10*R.k,H*R.k);
+  g.fillStyle=NET.dc?'#10b981':'#f0abfc';g.beginPath();g.roundRect?g.roundRect(L.sx-10*k,L.sy-(H+18)*k,R.sx-L.sx+20*k,26*k,8*k):g.rect(L.sx-10*k,L.sy-(H+18)*k,R.sx-L.sx+20*k,26*k);g.fill();
+  g.fillStyle='#3b0764';g.font=`800 ${Math.round(15*k)}px "Baloo 2",sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText(NET.dc?'🤝 Stadttor – verbunden':'🤝 Stadttor',(L.sx+R.sx)/2,L.sy-(H+5)*k);}}
  // Dunst am Horizont
  if(hz<VH){const hg=g.createLinearGradient(0,Math.max(0,hz),0,Math.max(0,hz)+VH*0.08);hg.addColorStop(0,'#ffffff88');hg.addColorStop(1,'#ffffff00');g.fillStyle=hg;g.fillRect(0,Math.max(0,hz),VW,VH*0.08);}
 }
@@ -1350,7 +1359,7 @@ function renderAction(){
  const e=V.sel&&eById(V.sel);
  if(e&&document.querySelector(`.ent[data-id="${e.id}"]`)){
   h=`<span class="an">${e.kind==='person'?'🧑':'🐾'} ${esc(e.name)}</span><button class="ab" data-a="sleep">${e.sleep?'☀️':'💤'}</button><button class="ab" data-a="dance">💃</button>`+
-   (e.kind==='person'?`<button class="ab" data-a="wave">👋</button><button class="ab" data-a="jump">🦘</button><button class="ab" data-a="happy">🙌</button><button class="ab" data-a="spin">🌀</button><button class="ab" data-a="sing">🎤</button><button class="ab" data-a="sit">🪑</button><button class="ab" data-a="eat">🍎</button><button class="ab" data-a="edit">✏️</button>`:`<button class="ab" data-a="love">❤️</button><button class="ab" data-a="jump">🦘</button><button class="ab" data-a="spin">🌀</button><button class="ab" data-a="roll">🤸</button><button class="ab" data-a="follow">${e.follow?'🛑':'🐾'}</button><button class="ab" data-a="feed">🥕</button>`)+`<button class="ab" data-a="close">✖️</button>`;
+   (e.kind==='person'?`<button class="ab" data-a="wave">👋</button><button class="ab" data-a="jump">🦘</button><button class="ab" data-a="happy">🙌</button><button class="ab" data-a="spin">🌀</button><button class="ab" data-a="sing">🎤</button><button class="ab" data-a="sit">🪑</button><button class="ab" data-a="eat">🍎</button>${e.visitor?'<button class="ab" data-a="home">🏠</button>':'<button class="ab" data-a="edit">✏️</button>'}`:`<button class="ab" data-a="love">❤️</button><button class="ab" data-a="jump">🦘</button><button class="ab" data-a="spin">🌀</button><button class="ab" data-a="roll">🤸</button><button class="ab" data-a="follow">${e.follow?'🛑':'🐾'}</button><button class="ab" data-a="feed">🥕</button>${e.visitor?'<button class="ab" data-a="home">🏠</button>':''}`)+`<button class="ab" data-a="close">✖️</button>`;
   ab.innerHTML=h;ab.classList.add('open');
   ab.querySelectorAll('.ab').forEach(x=>x.onclick=()=>entAction(e,x.dataset.a));return;}
  const it=V.selItem&&(V.mode==='room'?getObj('item',V.selItem):getObj('mitem',V.selItem));
@@ -1374,6 +1383,7 @@ function entAction(e,a){const el=document.querySelector(`.ent[data-id="${e.id}"]
   case 'love':playAnim(el,'hop',1300);spawnFloat(e,'❤️');setTimeout(()=>spawnFloat(e,'💕'),500);break;
   case 'feed':spawnFloat(e,pick(['🥕','🦴','🐟','🌾','🍎']));break;
   case 'edit':openEditor(e);return;
+  case 'home':sendHome(e);return;
   case 'close':V.sel=null;refreshEnt(e);break;
  }
  save();renderAction();}
@@ -1400,6 +1410,7 @@ function itemAction(it,a){pop(480);const inRoom=V.mode==='room';const el=documen
 function dialog(html,btns){const d=$('#dialog');d.innerHTML=`<div class="card">${html}<div>${btns.map((b,i)=>`<button class="bigbtn ${b[2]||''}" data-i="${i}">${b[0]}</button>`).join('')}</div></div>`;d.classList.add('open');
  d.querySelectorAll('.bigbtn').forEach(x=>x.onclick=()=>{d.classList.remove('open');pop();const f=btns[+x.dataset.i][1];f&&f();});}
 function askDelete(kind,o){
+ if(kind==='ent'&&o.visitor){sendHome(o);return;}
  const back=()=>render();
  if(kind==='ent'){dialog(`<h2>${esc(o.name)} wegschicken?</h2><p>Dann ist ${o.kind==='person'?'die Figur':'das Tier'} weg.</p>`,[['Ja, wegschicken',()=>{S.ents=S.ents.filter(e=>e!==o);if(V.sel===o.id)V.sel=null;save();render();},'b2'],['Nein, behalten',back,'b4']]);return;}
  if(kind==='bld'){const d=BT[o.t];dialog(`<h2>${d.e} ${d.n} abreißen?</h2><p>Alle Möbel darin sind dann weg. Figuren und Tiere kommen nach draußen.</p>`,[['Ja, abreißen',()=>{S.ents.forEach(e=>{if(e.loc.b===o.id){e.loc={b:null};e.x=o.x+d.w/2+rnd(-40,40);e.y=o.y+d.h+30;e.sleep=false;}});S.buildings=S.buildings.filter(b=>b!==o);save();render();},'b2'],['Nein, stehen lassen',back,'b4']]);return;}
@@ -1422,7 +1433,7 @@ function openDrawer(kind,tab){
   else grid=cat[1].split(' ').map(k=>`<button class="cell" data-k="${k}"><div class="ic">${k}</div></button>`).join('');}
  else if(kind==='people'){tabs=['🧑 Figuren'];
   grid=`<button class="cell newp" data-new="1"><div class="ic">➕</div>Neue Figur</button><button class="cell newp" data-rand="1"><div class="ic">🎲</div>Zufalls-Figur</button>`+
-   S.ents.filter(e=>e.kind==='person').map(e=>{const where=e.loc.b?(BT[bById(e.loc.b)?.t]?.n||'?'):'Draußen';return `<button class="cell" data-p="${e.id}"><div style="width:52px;height:52px">${personSVG(e.L,true).replace('<svg','<svg width="100%" height="100%"')}</div><div>${esc(e.name)}</div><div style="font-size:11px;color:#7c3aed">${where}</div></button>`;}).join('');}
+   S.ents.filter(e=>e.kind==='person').map(e=>{const where=e.away?'🚪 Auf Besuch':e.loc.b?(BT[bById(e.loc.b)?.t]?.n||'?'):'Draußen';return `<button class="cell" data-p="${e.id}"><div style="width:52px;height:52px">${personSVG(e.L,true).replace('<svg','<svg width="100%" height="100%"')}</div><div>${esc(e.name)}</div><div style="font-size:11px;color:#7c3aed">${where}</div></button>`;}).join('');}
  else if(kind==='animals'){tabs=['🐾 Tiere'];
   grid=ANIMAL_ORDER.map(k=>{const A=ANIMALS[k];const ic=A.s?`<div style="height:46px;width:60px">${ASVG[A.s].replace('<svg','<svg width="100%" height="100%"')}</div>`:`<div class="ic">${A.e}${A.deco||''}</div>`;return `<button class="cell" data-a="${k}">${ic}<div>${A.n}</div></button>`;}).join('');}
  else if(kind==='walls'){tabs=['🧱 Wände','🟫 Boden'];
@@ -1448,6 +1459,7 @@ function drawerPick(kind,ds){pop(660);const c=viewCenter();
  if(kind==='people'){
   if(ds.new){closeDrawer();openEditor(null);return;}
   if(ds.rand){const L=randomLook();addEntHere(makePerson(L,curLoc(),c[0],c[1]));toast(L.name+' ist da!');openDrawer('people',0);return;}
+  if(ds.p&&eById(ds.p)&&eById(ds.p).away){toast(eById(ds.p).name+' ist gerade auf Besuch – über 🤝 zurückholen');return;}
   if(ds.p){const e=eById(ds.p);e.loc=curLoc();e.x=c[0];e.y=c[1];e.sleep=false;save();closeDrawer();render();toast(e.name+' ist jetzt hier');}
   return;}
  if(kind==='animals'){const e=makeAnimal(ds.a,curLoc(),c[0]+(V.mode==='map'?rnd(-60,60):0),c[1]);addEntHere(e);return;}
@@ -1627,20 +1639,21 @@ const QR_SCAN_LIB='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
 let qrTimer=null,qrStream=null,qrRaf=null;
 function qrOverlay(html){let o=$('#qrOv');if(!o){o=document.createElement('div');o.id='qrOv';o.className='overlay open';o.style.zIndex=99;$('#app').appendChild(o);}o.classList.add('open');o.innerHTML=`<div class="card">${html}</div>`;return o;}
 function qrClose(){clearInterval(qrTimer);qrTimer=null;cancelAnimationFrame(qrRaf);if(qrStream){qrStream.getTracks().forEach(t=>t.stop());qrStream=null;}const o=$('#qrOv');if(o)o.remove();}
-async function qrShow(code){
+async function qrShow(code,opt){opt=opt||{};const PF=opt.prefix||'SST';
  const o=qrOverlay('<h2>🔳 QR-Code</h2><p>Wird erstellt …</p>');
  const CH=400,id=Math.random().toString(36).slice(2,6),parts=[];for(let i=0;i<code.length;i+=CH)parts.push(code.slice(i,i+CH));
- const svgs=parts.map((p,i)=>QR.svg(`SST|${id}|${i+1}|${parts.length}|${p}`));
- o.innerHTML=`<div class="card"><h2>🔳 Spielstand als QR-Code</h2><p style="font-size:15px">Auf dem anderen Gerät „📷 QR scannen“ wählen und die Kamera auf diesen Bildschirm halten${parts.length>1?' – die Codes wechseln, bis alle Teile gescannt sind':''}.</p>
+ const svgs=parts.map((p,i)=>QR.svg(`${PF}|${id}|${i+1}|${parts.length}|${p}`));
+ o.innerHTML=`<div class="card"><h2>${opt.title||'🔳 Spielstand als QR-Code'}</h2><p style="font-size:15px">${opt.hint||'Auf dem anderen Gerät „📷 QR scannen“ wählen und die Kamera auf diesen Bildschirm halten'}${parts.length>1?' – die Codes wechseln, bis alle Teile gescannt sind':''}.</p>
   <div id="qrBox" style="width:min(78vw,52vh,420px);aspect-ratio:1;margin:8px auto;background:#fff;border-radius:12px;padding:4px"></div>
   <p id="qrPart" style="font-weight:800;font-size:20px;margin:4px"></p>
-  <div style="display:flex;gap:8px"><button class="bigbtn b4" id="qrSlow" style="flex:1">🐢 Langsamer</button><button class="bigbtn b4" id="qrX" style="flex:1">Schließen</button></div></div>`;
+  ${opt.extra?`<button class="bigbtn" id="qrExtra">${opt.extra[0]}</button>`:''}<div style="display:flex;gap:8px"><button class="bigbtn b4" id="qrSlow" style="flex:1">🐢 Langsamer</button><button class="bigbtn b4" id="qrX" style="flex:1">${opt.closeLabel||'Schließen'}</button></div></div>`;
  let i=0,delay=900;const showPart=()=>{$('#qrBox').innerHTML=svgs[i];$('#qrPart').textContent=parts.length>1?`Teil ${i+1} von ${parts.length}`:'';i=(i+1)%parts.length;};
  showPart();const run=()=>{clearInterval(qrTimer);if(parts.length>1)qrTimer=setInterval(showPart,delay);};run();
  $('#qrSlow').onclick=()=>{delay=Math.min(3000,delay+600);run();toast('Wechselt jetzt alle '+(delay/1000).toFixed(1)+' Sekunden');};
- $('#qrX').onclick=qrClose;
+ $('#qrX').onclick=()=>{qrClose();opt.onClose&&opt.onClose();};
+ if(opt.extra)$('#qrExtra').onclick=()=>{qrClose();opt.extra[1]();};
 }
-async function qrScan(doImport,msg){
+async function qrScan(doImport,msg,prefix,title){const PF=prefix||'SST';
  const o=qrOverlay('<h2>📷 QR scannen</h2><p>Kamera wird gestartet …</p>');
  const fail=t=>{o.innerHTML=`<div class="card"><h2>📷 QR scannen</h2><p>${t}</p><button class="bigbtn b4" id="qrX">Schließen</button></div>`;$('#qrX').onclick=qrClose;};
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){fail('Dieses Gerät oder dieser Browser kann hier keine Kamera benutzen. Am besten in der installierten App scannen.');return;}
@@ -1648,7 +1661,7 @@ async function qrScan(doImport,msg){
  catch(e){fail('Die Kamera wurde nicht erlaubt oder ist hier nicht verfügbar. In der installierten App bei der Frage nach der Kamera „Zulassen“ tippen.');return;}
  let detector=null;try{if('BarcodeDetector' in window){const f=await BarcodeDetector.getSupportedFormats();if(f.includes('qr_code'))detector=new BarcodeDetector({formats:['qr_code']});}}catch(e){}
  if(!detector){try{await loadScript(QR_SCAN_LIB);}catch(e){qrClose();fail('Zum Scannen braucht dieses Gerät einmal Internet.');return;}}
- o.innerHTML=`<div class="card"><h2>📷 QR scannen</h2><p style="font-size:15px">Halte die Kamera auf den QR-Code am anderen Gerät.</p>
+ o.innerHTML=`<div class="card"><h2>${title||'📷 QR scannen'}</h2><p style="font-size:15px">Halte die Kamera auf den QR-Code am anderen Gerät.</p>
   <video id="qrVid" playsinline muted style="width:100%;max-height:50vh;border-radius:14px;background:#000;object-fit:cover"></video>
   <p id="qrProg" style="font-weight:800;font-size:20px;margin:6px">Suche QR-Code …</p><div id="qrDots" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:6px"></div>
   <button class="bigbtn b4" id="qrX">Abbrechen</button></div>`;
@@ -1656,7 +1669,7 @@ async function qrScan(doImport,msg){
  const vid=$('#qrVid');vid.srcObject=qrStream;try{await vid.play();}catch(e){}
  const cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
  let want=null,id=null;const got={};let busy=false,last=0;
- const handle=txt=>{const m=/^SST\|(\w+)\|(\d+)\|(\d+)\|(.*)$/s.exec(txt||'');if(!m)return;
+ const handle=txt=>{const m=new RegExp('^'+PF+'\\|(\\w+)\\|(\\d+)\\|(\\d+)\\|(.*)$','s').exec(txt||'');if(!m)return;
   if(id&&m[1]!==id)return;id=m[1];want=+m[3];if(!got[m[2]]){got[m[2]]=m[4];pop(700+Object.keys(got).length*40);}
   const n=Object.keys(got).length;$('#qrProg').textContent=`${n} von ${want} Teilen ✓`;
   $('#qrDots').innerHTML=Array.from({length:want},(_,k)=>`<span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;background:${got[k+1]?'#10b981':'#e5e7eb'};color:${got[k+1]?'#fff':'#6b7280'}">${k+1}</span>`).join('');
@@ -1667,6 +1680,94 @@ async function qrScan(doImport,msg){
   busy=false;};
  qrRaf=requestAnimationFrame(tick);
 }
+/* ---------------- Freunde: zwei Tablets im WLAN ---------------- */
+const GATE={x:110,y:648};
+const NET={pc:null,dc:null,role:null,away:new Set()};
+async function packText(str){try{const st=new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));return 'Z'+b64FromBuf(await new Response(st).arrayBuffer());}catch(e){return 'P'+btoa(unescape(encodeURIComponent(str)));}}
+async function unpackText(c){c=(c||'').replace(/\s+/g,'');if(c[0]==='Z'){const st=new Blob([bufFromB64(c.slice(1))]).stream().pipeThrough(new DecompressionStream('gzip'));return await new Response(st).text();}if(c[0]==='P')return decodeURIComponent(escape(atob(c.slice(1))));throw new Error('code');}
+const RTC_CFG={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};
+function waitIce(pc){return new Promise(res=>{if(pc.iceGatheringState==='complete')return res();const f=()=>{if(pc.iceGatheringState==='complete'){pc.removeEventListener('icegatheringstatechange',f);res();}};pc.addEventListener('icegatheringstatechange',f);setTimeout(res,5000);});}
+function netUI(){const b=$('#friendBtn');if(b)b.classList.toggle('on',!!NET.dc);camDirty=true;}
+function setupDC(dc){NET.dc=null;
+ dc.onopen=()=>{NET.dc=dc;netUI();qrClose();pop(880);toast('🤝 Verbunden! Ihr könnt euch jetzt besuchen.');if($('#friends'))showFriends();};
+ dc.onclose=()=>peerCleanup();dc.onerror=()=>{};
+ dc.onmessage=ev=>{let m;try{m=JSON.parse(ev.data);}catch(e){return;}netMsg(m);};}
+function netSend(m){try{if(NET.dc&&NET.dc.readyState==='open'){NET.dc.send(JSON.stringify(m));return true;}}catch(e){}toast('Keine Verbindung');return false;}
+function peerCleanup(){const was=!!(NET.dc||NET.pc);
+ try{NET.pc&&NET.pc.close();}catch(e){}NET.pc=null;NET.dc=null;NET.role=null;
+ let gone=0,back=0;S.ents=S.ents.filter(e=>{if(e.visitor){gone++;return false;}return true;});
+ S.ents.forEach(e=>{if(e.away){delete e.away;e.loc={b:null};e.x=GATE.x+rnd(10,70);e.y=GATE.y+rnd(20,60);e.sleep=false;back++;}});
+ netUI();if(was){save();render();if(gone||back)toast('🤝 Verbindung beendet – alle sind wieder zu Hause');else toast('🤝 Verbindung beendet');}
+ if($('#friends'))showFriends();}
+function peerClose(quiet){netSend({t:'bye'});setTimeout(()=>peerCleanup(),150);}
+async function hostInvite(){
+ try{peerCleanup();const pc=new RTCPeerConnection(RTC_CFG);NET.pc=pc;NET.role='host';const dc=pc.createDataChannel('stadt',{ordered:true});setupDC(dc);
+  pc.onconnectionstatechange=()=>{if(['failed','closed'].includes(pc.connectionState))peerCleanup();};
+  await pc.setLocalDescription(await pc.createOffer());qrOverlay('<h2>🤝 Einladung</h2><p>Wird vorbereitet …</p>');await waitIce(pc);
+  const code=await packText(JSON.stringify(pc.localDescription));NET.offerCode=code;
+  qrShow(code,{prefix:'SSO',title:'🤝 Schritt 1: Einladung',hint:'Das andere Tablet tippt auf 🤝 → „Einladung scannen“ und scannt diesen Code',extra:['📷 Schritt 2: Antwort scannen',hostScanAnswer],closeLabel:'Abbrechen',onClose:()=>{if(!NET.dc)peerCleanup();}});
+ }catch(e){toast('Verbinden geht auf diesem Gerät leider nicht');peerCleanup();}}
+function hostScanAnswer(){qrScan(async c=>{try{const d=JSON.parse(await unpackText(c));await NET.pc.setRemoteDescription(d);toast('Verbinde …');
+  setTimeout(()=>{if(!NET.dc)toast('Noch keine Verbindung – sind beide Tablets im selben WLAN?');},8000);}catch(e){toast('Das war kein Antwort-Code');}},null,'SSA','📷 Antwort scannen');}
+function guestScan(){qrScan(async c=>{try{peerCleanup();const pc=new RTCPeerConnection(RTC_CFG);NET.pc=pc;NET.role='guest';pc.ondatachannel=ev=>setupDC(ev.channel);
+  pc.onconnectionstatechange=()=>{if(['failed','closed'].includes(pc.connectionState))peerCleanup();};
+  await pc.setRemoteDescription(JSON.parse(await unpackText(c)));await pc.setLocalDescription(await pc.createAnswer());qrOverlay('<h2>🤝 Antwort</h2><p>Wird vorbereitet …</p>');await waitIce(pc);
+  const code=await packText(JSON.stringify(pc.localDescription));NET.answerCode=code;
+  qrShow(code,{prefix:'SSA',title:'🤝 Schritt 2: Antwort zeigen',hint:'Jetzt scannt das erste Tablet diesen Code mit „Antwort scannen“',closeLabel:'Abbrechen',onClose:()=>{if(!NET.dc)peerCleanup();}});}
+ catch(e){toast('Das war kein Einladungs-Code');peerCleanup();}},null,'SSO','📷 Einladung scannen');}
+// --- Nachrichten
+function cleanEnt(e){const c=JSON.parse(JSON.stringify(e));['_aid','away','visitor','origId','follow','bed','sit','swim','sleep','sr'].forEach(k=>delete c[k]);return c;}
+function sendVisit(e){if(!NET.dc){toast('Erst mit 🤝 verbinden');return;}
+ if(netSend({t:'visit',ent:cleanEnt(e)})){e.away=true;e.sleep=false;e.sit=false;e.swim=false;e.bed=null;if(V.sel===e.id)V.sel=null;
+  S.ents.forEach(f=>{if(f.follow===e.id){f.follow=null;}});save();render();pop(700);toast('🚪 '+e.name+' geht auf Besuch!');}}
+function sendHome(e){if(!e.visitor)return;netSend({t:'return',id:e.origId});S.ents=S.ents.filter(x=>x!==e);if(V.sel===e.id)V.sel=null;save();render();toast('🏠 '+e.name.replace(' (Besuch)','')+' geht nach Hause');}
+function placeAtGate(e){if(V.mode==='map'){e.loc={b:null};e.x=GATE.x+rnd(-10,60);e.y=GATE.y+rnd(25,55);}else{e.loc={b:V.b,f:V.f};e.x=rnd(20,80);e.y=rnd(70,90);}}
+function netMsg(m){
+ if(m.t==='bye'){peerCleanup();return;}
+ if(m.t==='visit'&&m.ent){const e=m.ent;e.origId=e.id;e.id=uid();e.visitor=true;e.name=(e.name||'Gast')+' (Besuch)';e.loc={b:null};e.x=GATE.x+rnd(0,60);e.y=GATE.y+rnd(25,55);
+  S.ents.push(e);if(V.mode==='map'){renderMap();centerMapSoft(e);}pop(900);toast('🚪 Besuch ist da: '+e.name.replace(' (Besuch)','')+' kommt durchs Stadttor!');return;}
+ if(m.t==='return'){const e=S.ents.find(x=>x.id===m.id&&x.away);if(e){delete e.away;placeAtGate(e);e.sleep=false;save();if(entsHere().includes(e))render();pop(800);toast('🏠 '+e.name+' ist wieder zu Hause!');}return;}
+ if(m.t==='recall'){const e=S.ents.find(x=>x.visitor&&x.origId===m.id);if(e)sendHome(e);return;}
+ if(m.t==='gift'){receiveGift(m.g);return;}
+ if(m.t==='emoji'){const d=document.createElement('div');d.className='bigemo';d.textContent=m.e;$('#app').appendChild(d);setTimeout(()=>d.remove(),2300);pop(1000);setTimeout(()=>pop(1200),120);toast('📞 Dein Freund sagt: '+m.e);return;}
+}
+function centerMapSoft(e){const q=mp(e.x,e.y);if(q.sx<0||q.sx>VW||q.sy<horizonY()||q.sy>VH)centerMap(e.x,e.y-60);}
+const GIFTS='🎂 🍕 🍦 🧁 🍩 🍿 🧸 🎈 ⚽ 🪀 🎨 🎸 🎹 🥁 🛋️ 🪑 📺 🪴 🌻 🌸 🌳 💡 📚 🎁 ⭐ 🌈 🛟 ⛲'.split(' ');
+const GIFT_ANIMALS=['capybara','meerschwein','hase','katze','hund','koala','pinguin','papagei','schildi','ente'];
+function sendGift(g){if(netSend({t:'gift',g})){pop(700);toast('🎁 Geschenk ist unterwegs!');}}
+function receiveGift(g){if(!g)return;const label=g.a?((ANIMALS[g.a]||{}).e||'🐾')+' '+((ANIMALS[g.a]||{}).n||''):g.k;
+ dialog(`<div class="logo">🎁</div><h2>Ein Geschenk für dich!</h2><p>Dein Freund hat dir etwas geschickt.</p>`,[['🎁 Auspacken!',()=>{const c=viewCenter();
+   if(g.a&&ANIMALS[g.a]){const e=makeAnimal(g.a,curLoc(),c[0]+(V.mode==='map'?rnd(-40,40):0),c[1]);S.ents.push(e);render();spawnFloat(e,'🎉');}
+   else if(g.k){if(V.mode==='room'){const fl=bById(V.b).floors[V.f];fl.items.push({id:uid(),k:g.k,x:rnd(30,70),y:rnd(58,66),s:1});}else{S.mapItems.push({id:uid(),k:g.k,x:c[0]+rnd(-60,60),y:c[1]+rnd(-20,30),s:1.6});}render();}
+   pop(900);toast('🎉 '+label+' ausgepackt!');save();},'']]);}
+// --- Freunde-Fenster
+function friendsOverlay(html){let o=$('#friends');if(!o){o=document.createElement('div');o.id='friends';o.className='overlay open';o.style.zIndex=85;$('#app').appendChild(o);o.addEventListener('click',ev=>{if(ev.target===o)closeFriends();});}o.classList.add('open');o.innerHTML=`<div class="card">${html}</div>`;return o;}
+function closeFriends(){const o=$('#friends');if(o)o.remove();}
+function showFriends(tab){
+ if(!NET.dc){friendsOverlay(`<div class="logo">🤝</div><h2>Mit einem anderen Tablet spielen</h2><p style="font-size:16px">Beide Tablets müssen im <b>selben WLAN</b> sein. Ein Tablet lädt ein, das andere scannt.</p>
+   <button class="bigbtn b3" id="fInv">📨 Ich lade ein<small>Zeigt einen QR-Code</small></button><button class="bigbtn" id="fScan">📷 Einladung scannen<small>Mit der Kamera den Code vom anderen Tablet lesen</small></button><button class="bigbtn b4" id="fX">Schließen</button>`);
+  $('#fInv').onclick=()=>{pop();closeFriends();hostInvite();};$('#fScan').onclick=()=>{pop();closeFriends();guestScan();};$('#fX').onclick=()=>{pop();closeFriends();};return;}
+ tab=tab||'main';
+ if(tab==='main'){const away=S.ents.filter(e=>e.away),vis=S.ents.filter(e=>e.visitor);
+  friendsOverlay(`<div class="logo">🤝</div><h2>Verbunden!</h2>
+   <button class="bigbtn b3" id="fVisit">🚪 Auf Besuch schicken</button><button class="bigbtn b2" id="fGift">🎁 Geschenk schicken</button><button class="bigbtn" id="fEmo">📞 Emoji schicken</button>
+   ${away.length?`<p style="margin-top:12px"><b>Gerade auf Besuch:</b></p><div class="row" style="justify-content:center">${away.map(e=>`<button class="chb" data-recall="${e.id}">${esc(e.name)} – 🏠 zurückholen</button>`).join('')}</div>`:''}
+   ${vis.length?`<p style="margin-top:12px"><b>Besuch bei dir:</b> ${vis.map(e=>esc(e.name.replace(' (Besuch)',''))).join(', ')}</p>`:''}
+   <button class="bigbtn b4" id="fBye">🔌 Verbindung trennen</button><button class="bigbtn b4" id="fX">Schließen</button>`);
+  $('#fVisit').onclick=()=>{pop();showFriends('visit');};$('#fGift').onclick=()=>{pop();showFriends('gift');};$('#fEmo').onclick=()=>{pop();showFriends('emo');};
+  document.querySelectorAll('[data-recall]').forEach(b=>b.onclick=()=>{pop();netSend({t:'recall',id:b.dataset.recall});toast('Ruft nach Hause …');});
+  $('#fBye').onclick=()=>{pop();peerClose();};$('#fX').onclick=()=>{pop();closeFriends();};return;}
+ const back='<button class="bigbtn b4" id="fBack">Zurück</button>';
+ if(tab==='visit'){const list=entsHere().filter(e=>!e.visitor);
+  friendsOverlay(`<h2>🚪 Wer geht auf Besuch?</h2>${list.length?`<div class="dgrid" style="max-height:46vh">${list.map(e=>`<button class="cell" data-v="${e.id}">${e.kind==='person'?`<div style="width:46px;height:46px">${personSVG(e.L,true)}</div>`:`<div class="ic">${(ANIMALS[e.a]||{}).e||'🐾'}</div>`}<div>${esc(e.name)}</div></button>`).join('')}</div>`:'<p>Hier ist gerade niemand. Geh dorthin, wo deine Figuren sind.</p>'}${back}`);
+  document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{const e=eById(b.dataset.v);if(e){sendVisit(e);showFriends();}});}
+ if(tab==='gift'){friendsOverlay(`<h2>🎁 Was möchtest du schenken?</h2><div class="dgrid" style="max-height:46vh">${GIFTS.map(k=>`<button class="cell" data-g="${k}"><div class="ic">${k}</div></button>`).join('')}${GIFT_ANIMALS.map(a=>`<button class="cell" data-ga="${a}"><div class="ic">${ANIMALS[a].e||'🐾'}</div><div>${ANIMALS[a].n}</div></button>`).join('')}</div>${back}`);
+  document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{sendGift({k:b.dataset.g});showFriends();});document.querySelectorAll('[data-ga]').forEach(b=>b.onclick=()=>{sendGift({a:b.dataset.ga});showFriends();});}
+ if(tab==='emo'){const EM='👋 😊 😂 😍 🥳 😮 😴 🤗 👍 ❤️ ⭐ 🌈 🍕 🎵 🐶 🎉'.split(' ');
+  friendsOverlay(`<h2>📞 Emoji schicken</h2><div class="dgrid">${EM.map(k=>`<button class="cell" data-e="${k}"><div class="ic">${k}</div></button>`).join('')}</div>${back}`);
+  document.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{if(netSend({t:'emoji',e:b.dataset.e})){pop(900);toast('📞 Gesendet: '+b.dataset.e);}});}
+ const fb=$('#fBack');if(fb)fb.onclick=()=>{pop();showFriends();};
+}
 function showRules(){
  const st=todayState();const wk=weekKey(st.k);
  showScreen(`<div class="card rules"><h2>ℹ️ So geht's</h2><ul>
@@ -1676,6 +1777,7 @@ function showRules(){
  <li>🏠 Figur auf ein Haus ziehen = sie geht hinein. In den Aufzug ziehen = sie fährt mit.</li>
  <li>🛏️ Figur aufs Bett ziehen = sie schläft. Auf Stuhl oder Sofa = sie setzt sich. In den Pool = sie schwimmt.</li>
  <li>🐾 Tier antippen und 🐾 drücken = es läuft der nächsten Figur hinterher.</li>
+ <li>🤝 <b>Mit einem anderen Tablet spielen</b> (gleiches WLAN): oben auf 🤝 tippen. Ein Tablet lädt ein, das andere scannt. Dann könnt ihr Figuren auf Besuch schicken, Geschenke und Emojis senden.</li>
  <li>🗑️ Etwas weg haben? In den Mülleimer ziehen.</li>
  </ul><h2>⏰ Spielzeit</h2><ul>
  <li>Jeden Tag <b>30 Minuten</b>.</li>
@@ -1687,6 +1789,7 @@ function showRules(){
  $('#rbBack').onclick=()=>{pop();showStart();};
 }
 function showEnd(){
+ if(typeof peerClose==='function'&&NET.dc)peerClose(true);
  lsSet(SKEY,S);closeDrawer();
  const st=todayState();if(st.locked){showStart();return;}
  const wk=weekKey(st.k);let btns='';
@@ -1702,6 +1805,7 @@ function showEnd(){
 
 /* ---------------- Start ---------------- */
 $('#backBtn').onclick=()=>{pop();goMap();};
+$('#friendBtn').onclick=()=>{pop();showFriends();};
 $('#todBtn').onclick=()=>{const i=TODS.findIndex(t=>t[0]===S.tod);S.tod=TODS[(i+1)%4][0];applyTod();camDirty=true;pop(300+i*120);save();};
 $('#muteBtn').onclick=()=>{S.muted=!S.muted;$('#muteBtn').textContent=S.muted?'🔇':'🔊';save();pop();};
 window.addEventListener('resize',()=>{if(V.mode==='room')setU();else{mapDims();}});
