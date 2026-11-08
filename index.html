@@ -40,6 +40,11 @@ button{font-family:inherit;cursor:pointer;border:none}
 .paths{position:absolute;inset:0;pointer-events:none}
 .bld{position:absolute;touch-action:none}
 .bld svg{display:block;filter:drop-shadow(0 4px 3px #0003)}
+.bld .bsv{transition:transform .15s}
+.bld.press .bsv{transform:scale(.97);transition:transform .55s}
+.bld.lifted .bsv{transform:translateY(-14px);animation:wiggleB .35s infinite}
+.bld.lifted svg{filter:drop-shadow(0 18px 10px #0005)}
+@keyframes wiggleB{0%,100%{transform:translateY(-14px) rotate(-1.5deg)}50%{transform:translateY(-14px) rotate(1.5deg)}}
 .blabel{position:absolute;top:100%;left:50%;transform:translateX(-50%);background:#fffd;border-radius:10px;padding:0 8px;font-weight:800;font-size:14px;white-space:nowrap;margin-top:2px}
 .badge{position:absolute;top:-6px;right:-6px;background:#ec4899;color:#fff;border-radius:14px;padding:0 8px;font-weight:800;font-size:15px;border:2px solid #fff}
 .mitem{position:absolute;transform:translate(-50%,-100%);touch-action:none;line-height:1}
@@ -1021,9 +1026,9 @@ function mapTick(now){
 }
 let pan=null;
 (()=>{const ms=$('#mapScroll');
- ms.addEventListener('pointerdown',ev=>{if(drag||V.mode!=='map')return;pan={x:ev.clientX,y:ev.clientY,cx:CAM.x,cy:CAM.y,moved:false,id:ev.pointerId};try{ms.setPointerCapture(ev.pointerId);}catch(e){}});
- ms.addEventListener('pointermove',ev=>{if(!pan||ev.pointerId!==pan.id)return;const dx=ev.clientX-pan.x,dy=ev.clientY-pan.y;if(!pan.moved&&Math.hypot(dx,dy)<8)return;pan.moved=true;CAM.x=pan.cx-dx/MZ;CAM.y=pan.cy-dy/(MZ*MT);clampCam();camDirty=true;});
- const pend=ev=>{if(!pan||ev.pointerId!==pan.id)return;const was=pan;pan=null;if(!was.moved&&ev.type==='pointerup')groundTap(ev);};
+ ms.addEventListener('pointerdown',ev=>{if(drag||V.mode!=='map')return;const bl=ev.target.closest&&ev.target.closest('.bld');pan={x:ev.clientX,y:ev.clientY,cx:CAM.x,cy:CAM.y,moved:false,id:ev.pointerId,bld:bl?bl.dataset.id:null};try{ms.setPointerCapture(ev.pointerId);}catch(e){}});
+ ms.addEventListener('pointermove',ev=>{if(!pan||ev.pointerId!==pan.id)return;const dx=ev.clientX-pan.x,dy=ev.clientY-pan.y;if(!pan.moved&&Math.hypot(dx,dy)<8)return;if(!pan.moved){clearTimeout(lpTimer);document.querySelectorAll('.bld.press').forEach(b=>b.classList.remove('press'));}pan.moved=true;CAM.x=pan.cx-dx/MZ;CAM.y=pan.cy-dy/(MZ*MT);clampCam();camDirty=true;});
+ const pend=ev=>{clearTimeout(lpTimer);document.querySelectorAll('.bld.press').forEach(b=>b.classList.remove('press'));if(!pan||ev.pointerId!==pan.id)return;const was=pan;pan=null;if(!was.moved&&ev.type==='pointerup'){if(was.bld)onTap('bld',was.bld);else groundTap(ev);}};
  ms.addEventListener('pointerup',pend);ms.addEventListener('pointercancel',pend);
  ms.addEventListener('wheel',ev=>{ev.preventDefault();CAM.y+=ev.deltaY*0.8;CAM.x+=ev.deltaX*0.8;clampCam();camDirty=true;},{passive:false});
 })();
@@ -1238,8 +1243,13 @@ setInterval(()=>{if(!playing)return;let changed=false;
 let drag=null;
 function pointerModel(ev){if(V.mode==='map'){const r=$('#mapScroll').getBoundingClientRect();return mpInv(ev.clientX-r.left,ev.clientY-r.top);}const r=roomRect();return [(ev.clientX-r.left)/r.width*100,(ev.clientY-r.top)/r.height*100];}
 function getObj(kind,id){if(kind==='ent')return eById(id);if(kind==='bld')return bById(id);if(kind==='mitem')return S.mapItems.find(i=>i.id===id);if(kind==='item'){const b=bById(V.b);return b&&b.floors[V.f].items.find(i=>i.id===id);}}
+let lpTimer=null;
 function attach(el,kind,id){
- el.addEventListener('pointerdown',ev=>{if(drag)return;ev.stopPropagation();const o=getObj(kind,id);if(!o)return;const p=pointerModel(ev);
+ if(kind==='bld')el.addEventListener('pointerdown',ev=>{if(drag||V.mode!=='map')return;const pid=ev.pointerId,sx=ev.clientX,sy=ev.clientY;el.classList.add('press');clearTimeout(lpTimer);
+  lpTimer=setTimeout(()=>{el.classList.remove('press');if(!pan||pan.id!==pid||pan.moved)return;pan=null;const o=getObj(kind,id);if(!o)return;
+   const p=pointerModel({clientX:sx,clientY:sy});drag={el,kind,id,o,sx,sy,moved:true,ox:o.x-p[0],oy:o.y-p[1]};try{el.setPointerCapture(pid);}catch(e){}
+   startDrag();el.classList.add('lifted');try{navigator.vibrate&&navigator.vibrate(35);}catch(e){}pop(300);toast('🏗️ Haus verschieben – loslassen zum Abstellen');},550);});
+ if(kind!=='bld')el.addEventListener('pointerdown',ev=>{if(drag)return;ev.stopPropagation();const o=getObj(kind,id);if(!o)return;const p=pointerModel(ev);
   let ax=o.x,ay=o.y;if(V.mode==='room'){const q=toScreen(o.x,o.y);ax=q.sx;ay=q.sy;}
   drag={el,kind,id,o,sx:ev.clientX,sy:ev.clientY,moved:false,ox:ax-p[0],oy:ay-p[1]};try{el.setPointerCapture(ev.pointerId);}catch(e){}});
  el.addEventListener('pointermove',ev=>{if(!drag||drag.el!==el)return;
@@ -1264,7 +1274,7 @@ function moveDrag(ev){const d=drag,p=pointerModel(ev);let x=p[0]+d.ox,y=p[1]+d.o
  $('#trash').classList.toggle('hot',overTrash(ev));}
 function hitAt(ev,sel){return document.elementsFromPoint(ev.clientX,ev.clientY).map(n=>n.closest(sel)).find(n=>n&&n!==drag?.el);}
 function endDrag(d,ev){
- $('#trash').classList.remove('show','hot');d.el.style.opacity='';d.el.classList.remove('held');
+ $('#trash').classList.remove('show','hot');d.el.style.opacity='';d.el.classList.remove('held','lifted');
  if(overTrash(ev)){askDelete(d.kind,d.o);return;}
  if(d.kind==='ent'){
   const e=d.o;
