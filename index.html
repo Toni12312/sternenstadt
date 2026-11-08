@@ -482,7 +482,7 @@ const FLOORS=['wood','tile','carpet','bluecarpet','mint','stone','deck','dark','
 
 const ANIMALS={
  meerschwein:{n:'Meerschweinchen',s:'meer',sz:6,ar:1.66},
- capybara:{n:'Capybara',s:'capy',sz:10,ar:1.475},
+ capybara:{n:'Capybara',s:'capy',sz:11,ar:1.56},
  hase:{n:'Hase',e:'🐇',sz:8},
  tiger:{n:'Tiger',e:'🐅',sz:13},
  luchs:{n:'Luchs',s:'luchs',sz:10,ar:1.25},
@@ -652,39 +652,43 @@ const ASVG={
 };
 
 function capySVG(){
- let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;const f=v=>v.toFixed(1);
- const body='M29 31 C33 17 58 12 83 15 C102 18 115 31 114 47 C113 60 106 66.5 94 68.5 C82 70.5 58 70.5 46 68.5 C35 67 27 59 27 49 C27 42 27 36 29 31Z';
- const head='M47 24 C40 17 25 16.5 14.5 19 C8.5 20.6 4.8 24 4.2 29.5 L3.8 44.5 C4.2 50.5 7.4 54.4 13.4 55.8 C21.5 57.6 32 57.2 40 54.6 C46.2 52.6 49.6 44.5 49.6 36.5 C49.6 30.5 49 26.6 47 24Z';
- const legF=dx=>`M${37+dx} 55 C${36+dx} 63 ${36.5+dx} 70 ${37.5+dx} 76 L${46.5+dx} 76 C${46+dx} 70 ${47+dx} 62 ${47.5+dx} 55Z`;
- const legB=dx=>`M${86+dx} 50 C${95+dx} 52 ${100+dx} 60 ${99+dx} 76 L${90+dx} 76 C${90.5+dx} 70 ${88+dx} 64 ${84+dx} 60Z`;
- const toes=(x)=>`<ellipse cx="${x+1.5}" cy="76.3" rx="1.6" ry="1" fill="#2e1d10"/><ellipse cx="${x+4.5}" cy="76.5" rx="1.6" ry="1" fill="#2e1d10"/><ellipse cx="${x+7.5}" cy="76.3" rx="1.6" ry="1" fill="#2e1d10"/>`;
- let fur='';
- for(let i=0;i<420;i++){const x=29+r()*86,y=15+r()*54;if(((x-71)/43)**2+((y-42)/26)**2>0.95)continue;const L=1.4+r()*2,dy=0.5+r()*1.1+(y-40)*0.02,dark=r()<0.5;
-  fur+=`<path d="M${f(x)} ${f(y)} q${f(L*0.5)} ${f(dy*0.15)} ${f(L)} ${f(dy)}" stroke="${dark?'#5e3b21':'#c8925f'}" stroke-opacity="${dark?0.42:0.38}" stroke-width="${f(0.32+r()*0.3)}" fill="none" stroke-linecap="round"/>`;}
- let hfur='';
- for(let i=0;i<150;i++){const x=9+r()*40,y=18+r()*37;if(((x-28)/21)**2+((y-37)/18)**2>0.9)continue;const L=1+r()*1.4,dark=r()<0.5;
-  hfur+=`<path d="M${f(x)} ${f(y)} q${f(L*0.5)} ${f(0.2)} ${f(L)} ${f(0.5+r()*0.7)}" stroke="${dark?'#5e3b21':'#cf9a68'}" stroke-opacity=".38" stroke-width=".32" fill="none" stroke-linecap="round"/>`;}
- return `<svg viewBox="0 0 118 80" data-noshade="1"><defs>
- <linearGradient id="cpB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b07c4b"/><stop offset=".55" stop-color="#94633a"/><stop offset="1" stop-color="#6e4627"/></linearGradient>
- <radialGradient id="cpH" cx=".45" cy=".25" r=".7"><stop offset="0" stop-color="#d9a877" stop-opacity=".7"/><stop offset="1" stop-color="#d9a877" stop-opacity="0"/></radialGradient>
- <linearGradient id="cpK" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b5814f"/><stop offset="1" stop-color="#7c5130"/></linearGradient>
- <linearGradient id="cpM" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5c3a22"/><stop offset=".45" stop-color="#8a5c36" stop-opacity="0"/></linearGradient>
- <linearGradient id="cpL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a4f2d"/><stop offset=".6" stop-color="#6a4426"/><stop offset="1" stop-color="#4e321c"/></linearGradient>
- <clipPath id="cpCB"><path d="${body}"/></clipPath><clipPath id="cpCH"><path d="${head}"/></clipPath></defs>
- <g class="capyleg b" style="transform-origin:${42+7}px 56px"><path d="${legF(7)}" fill="#5e3c22"/>${toes(43.5)}</g>
- <g class="capyleg a" style="transform-origin:${92-7}px 54px"><path d="${legB(-7)}" fill="#5e3c22"/>${toes(82)}</g>
- <g class="capyleg a" style="transform-origin:42px 56px"><path d="${legF(0)}" fill="url(#cpL)"/><path d="M39 60 C39.5 66 40 70 40.5 74" stroke="#a87444" stroke-width=".8" opacity=".5" fill="none"/>${toes(37.5)}</g>
- <g class="capyleg b" style="transform-origin:92px 54px"><path d="${legB(0)}" fill="url(#cpL)"/><path d="M94 58 C96 63 96 68 95 73" stroke="#a87444" stroke-width=".8" opacity=".5" fill="none"/>${toes(89)}</g>
- <path d="${body}" fill="url(#cpB)"/><g clip-path="url(#cpCB)"><ellipse cx="72" cy="22" rx="40" ry="12" fill="url(#cpH)"/><ellipse cx="68" cy="69" rx="38" ry="9" fill="#5e3c22" opacity=".35"/>${fur}</g>
- <path d="M104 40 C108 44 110 50 108 56" stroke="#5a3820" stroke-width=".8" fill="none" opacity=".5"/>
- <path d="${head}" fill="url(#cpK)"/><g clip-path="url(#cpCH)"><rect x="0" y="14" width="26" height="46" fill="url(#cpM)"/><ellipse cx="30" cy="24" rx="17" ry="7" fill="url(#cpH)"/>${hfur}<path d="M10 52 C18 56 30 56 40 53" stroke="#5a3820" stroke-width="1.2" fill="none" opacity=".45"/></g>
-
- <path d="M3.9 27.5 C4.3 24.6 6.6 23.3 9.6 23.5 C11 26 11.3 29.5 10.2 32 C8 33.4 5.6 33.3 3.8 32.2Z" fill="#3a2414"/><path d="M6.4 26.4 Q8.4 28.4 7.2 31" stroke="#0e0703" stroke-width="1.1" fill="none" stroke-linecap="round"/><path d="M4.4 33 L4.8 40.5" stroke="#3a2414" stroke-width=".8" fill="none" opacity=".8"/>
- <path d="M4 44.5 Q9 47.8 16 46.4" stroke="#3a2414" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M4.2 41 Q4.6 43 4 44.5" stroke="#3a2414" stroke-width=".9" fill="none"/>
- <path d="M18.5 25.5 Q24 22.6 29.5 25.2" stroke="#c99566" stroke-width="1.6" fill="none" opacity=".6" stroke-linecap="round"/>
- <g class="eyes"><ellipse cx="24" cy="28.4" rx="2.7" ry="2.3" fill="#140c07"/><circle cx="24.9" cy="27.6" r=".75" fill="#fff" opacity=".85"/></g>
- <path d="M21 30.6 Q24 32 27.2 30.4" stroke="#5a3820" stroke-width=".7" fill="none" opacity=".7"/>
- <ellipse cx="38.2" cy="19.6" rx="3.9" ry="3.4" fill="#7a4e2b"/><ellipse cx="38.6" cy="20.2" rx="2.2" ry="1.9" fill="#3e2615"/><path d="M35 18.4 Q38 15.6 41.6 18.2" stroke="#b07c4b" stroke-width=".8" fill="none"/>
+ let seed=7;const r=()=>(seed=(seed*9301+49297)%233280)/233280;const f=v=>v.toFixed(1);
+ const body='M33 6 C45 9 60 7 78 8 C96 9 110 14 117 25 C126 34 129.5 46 124.5 55 C120.5 61 112 63.5 104 62.5 C92 63.5 72 63.5 58 62.5 C52 61.5 47 57 45 50 C43 45 41 41 38 38 Z';
+ const head='M33 6 C28 2 20 2 13 6 C8 9 4 13 2 18 C0.5 21 0.5 25 1.5 28 C2.5 31 4.5 33 7 34 C11 35.5 17 35.5 23 35.2 C30 37 36 40 41 42.5 L46 30 C43 20 38.5 10 33 6Z';
+ const legF=dx=>`M${47+dx} 52 C${46+dx} 62 ${46.5+dx} 72 ${47+dx} 79.5 L${54.5+dx} 79.5 C${54.5+dx} 72 ${55.5+dx} 62 ${56+dx} 54Z`;
+ const legB=dx=>`M${99+dx} 48 C${108+dx} 52 ${114+dx} 60 ${112.5+dx} 70 C${112+dx} 74 ${113+dx} 77 ${113.5+dx} 79.5 L${106+dx} 79.5 C${106+dx} 76 ${105.5+dx} 73 ${104+dx} 70 C${102+dx} 66 ${98+dx} 62 ${95+dx} 58Z`;
+ const foot=(x)=>`<path d="M${x-1} 79.6 Q${x+3.5} 78 ${x+8.5} 79.6 Q${x+3.5} 81.2 ${x-1} 79.6Z" fill="#3b2a1d"/>`;
+ // Rumpf-Oberkante für Fellspitzen (x -> y)
+ const topY=x=>x<78?7+((x-33)/45)*1.5-Math.sin((x-33)/45*Math.PI)*1:x<117?8+((x-78)/39)**1.6*17:25+((x-117)/12)**1.2*20;
+ let rim='';for(let x=34;x<127;x+=0.9){const y=topY(x)+r()*0.8,L=1.6+r()*2.2,ang=-1.1+(x/130)*0.9+r()*0.5;rim+=`<path d="M${f(x)} ${f(y+0.8)} l${f(Math.cos(ang)*L)} ${f(Math.sin(ang)*L)}" stroke="${r()<0.6?'#e8bb8c':'#c99464'}" stroke-width="${f(0.3+r()*0.25)}" stroke-opacity=".85" stroke-linecap="round"/>`;}
+ let fur='';for(let i=0;i<620;i++){const x=34+r()*92,y=7+r()*57;if(y<topY(x)+0.5)continue;const L=1.4+r()*2.4,dk=r();const dx=L*0.55,dy=L*(0.6+(y-30)*0.012);
+  fur+=`<path d="M${f(x)} ${f(y)} q${f(dx*0.5)} ${f(dy*0.3)} ${f(dx)} ${f(dy)}" stroke="${dk<0.45?'#7d4a26':dk<0.8?'#d9a271':'#9a6a4a'}" stroke-opacity="${dk<0.45?0.45:0.35}" stroke-width="${f(0.28+r()*0.28)}" fill="none" stroke-linecap="round"/>`;}
+ let hfur='';for(let i=0;i<190;i++){const x=6+r()*38,y=4+r()*34;const L=1+r()*1.5;hfur+=`<path d="M${f(x)} ${f(y)} q${f(L*0.5)} ${f(0.3)} ${f(L)} ${f(0.7+r()*0.6)}" stroke="${r()<0.5?'#6e3a18':'#c98348'}" stroke-opacity=".4" stroke-width=".3" fill="none" stroke-linecap="round"/>`;}
+ let whisk='';[[6,27,-11,-3],[6.5,28.5,-12,1],[7,30,-10,4],[5,24,-10,-6]].forEach(w=>whisk+=`<path d="M${w[0]} ${w[1]} q${w[2]*0.5} ${w[3]*0.3} ${w[2]} ${w[3]}" stroke="#2a1d14" stroke-width=".22" fill="none" opacity=".7"/>`);
+ return `<svg viewBox="-4 -2 134 86" data-noshade="1"><defs>
+ <linearGradient id="cpB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8935f"/><stop offset=".45" stop-color="#b97c4a"/><stop offset=".85" stop-color="#93582c"/><stop offset="1" stop-color="#6e3d1b"/></linearGradient>
+ <linearGradient id="cpK" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ad6a35"/><stop offset=".6" stop-color="#9a5626"/><stop offset="1" stop-color="#7a3f17"/></linearGradient>
+ <radialGradient id="cpHL" cx=".55" cy=".2" r=".6"><stop offset="0" stop-color="#e2b07e" stop-opacity=".55"/><stop offset="1" stop-color="#e2b07e" stop-opacity="0"/></radialGradient>
+ <linearGradient id="cpMz" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2a2320"/><stop offset=".6" stop-color="#3c302a"/><stop offset="1" stop-color="#5a3b24" stop-opacity="0"/></linearGradient>
+ <linearGradient id="cpL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a86a3a"/><stop offset=".45" stop-color="#7a5236"/><stop offset="1" stop-color="#5a412e"/></linearGradient>
+ <linearGradient id="cpLd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d4e2c"/><stop offset="1" stop-color="#46321f"/></linearGradient>
+ <filter id="cpBl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter><filter id="cpBs" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1"/></filter><clipPath id="cpCB"><path d="${body}"/></clipPath><clipPath id="cpCH"><path d="${head}"/></clipPath></defs>
+ <g class="capyleg b" style="transform-origin:58px 54px"><path d="${legF(7)}" fill="url(#cpLd)"/>${foot(53)}</g>
+ <g class="capyleg a" style="transform-origin:100px 52px"><path d="${legB(-8)}" fill="url(#cpLd)"/>${foot(97)}</g>
+ <g class="capyleg a" style="transform-origin:51px 54px"><path d="${legF(0)}" fill="url(#cpL)"/><path d="M49 60 C49.3 67 49.6 72 50 77" stroke="#c08b5e" stroke-width=".5" opacity=".45" fill="none"/>${foot(46.5)}</g>
+ <g class="capyleg b" style="transform-origin:104px 52px"><path d="${legB(0)}" fill="url(#cpL)"/><path d="M106 60 C109 64 110 68 109 72" stroke="#c08b5e" stroke-width=".5" opacity=".4" fill="none"/>${foot(105.5)}</g>
+ <path d="${body}" fill="url(#cpB)"/>
+ <g clip-path="url(#cpCB)"><ellipse cx="95" cy="14" rx="34" ry="12" fill="url(#cpHL)"/><ellipse cx="72" cy="66" rx="40" ry="8" fill="#5e3216" opacity=".35"/>${fur}<path d="M118 34 C123 42 124 50 120 57" stroke="#7d4a26" stroke-width=".7" fill="none" opacity=".45"/></g>
+ ${rim}
+ <path d="${head}" fill="url(#cpK)"/>
+ <g clip-path="url(#cpCH)"><ellipse cx="22" cy="6" rx="16" ry="6" fill="url(#cpHL)"/><path d="M-1 15 C3 13 6.5 12.5 9 13.5 C11 19 11 26 9.5 33 C6.5 35.5 2 35.5 -1 34Z" fill="#33281f" opacity=".85" filter="url(#cpBs)"/><path d="M9 13 C14 16 16 24 14 33" stroke="#5a3418" stroke-width="3" fill="none" opacity=".35" filter="url(#cpBl)"/>${hfur}<ellipse cx="43" cy="26" rx="7" ry="17" fill="#b47746" filter="url(#cpBl)"/><ellipse cx="38" cy="40" rx="9" ry="5" fill="#a5683a" filter="url(#cpBl)"/><path d="M9 34.5 C17 36 27 37 38 41.5" stroke="#5e2f12" stroke-width="1.1" fill="none" opacity=".45"/><path d="M14 22 C18 27 24 30 32 32" stroke="#c98348" stroke-width="1.4" fill="none" opacity=".25"/></g>
+ <path d="M1.6 19 C2.5 16.6 4.6 15.6 6.6 16.2 C7.8 18.5 7.6 21.6 6.4 23.6 C4.6 24.6 2.6 24.3 1.4 23Z" fill="#6a5a4f"/><path d="M2.6 18.6 Q4.2 20 3.2 22.4" stroke="#140c08" stroke-width=".9" fill="none" stroke-linecap="round"/>
+ <path d="M2.2 29.5 Q5 31 8.5 30.6" stroke="#1a110c" stroke-width=".8" fill="none" stroke-linecap="round"/><path d="M3.5 32.5 Q6 34.4 9 34" stroke="#2a1a10" stroke-width=".7" fill="none" opacity=".8"/>
+ ${whisk}
+ <g class="eyes"><path d="M17.2 12.6 Q20.6 10.6 24.6 11.8 Q21.4 13.9 17.2 12.6Z" fill="#160b06"/><circle cx="22.2" cy="11.9" r=".45" fill="#fff" opacity=".75"/></g>
+ <path d="M16.8 10.4 Q20.8 8.6 25 10.2" stroke="#c98348" stroke-width=".9" fill="none" opacity=".5" stroke-linecap="round"/>
+ <path d="M24.2 0.4 C26.2 -0.4 28 0.8 27.6 2.8 C27 3.8 25 3.6 24 2.6Z" fill="#2e1c0f"/>
+ <path d="M29.2 3.2 C29.6 0.2 32.8 -0.6 34.6 1.2 C36 2.8 35.4 5.6 33.4 6.6 C31.4 7.2 29.4 5.8 29.2 3.2Z" fill="#3e2512"/><path d="M30.6 3.4 C31 1.8 32.8 1.4 33.8 2.6" stroke="#6b4a33" stroke-width=".6" fill="none"/>
  </svg>`;}
 ASVG.capy=capySVG();
 Object.keys(ASVG).forEach(k=>{const sv=ASVG[k];if(sv.includes('data-noshade'))return;const i=sv.indexOf('>')+1,j=sv.lastIndexOf('</svg>');const inner=sv.slice(i,j);
