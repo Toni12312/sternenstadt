@@ -52,10 +52,10 @@ button{font-family:inherit;cursor:pointer;border:none}
 #room{position:relative;width:100%;height:100%;border-radius:20px;overflow:hidden;box-shadow:inset 0 0 0 4px #0002}
 #room{background:#fffaf2}
 .w3{position:absolute;inset:0}
-.ceil{clip-path:polygon(0 0,100% 0,100% 27%,80% 4%,20% 4%,0 27%);background:linear-gradient(#f5ede0,#fffaf2)}
-.wallB{clip-path:polygon(20% 4%,80% 4%,80% 48%,20% 48%)}
-.wallL{clip-path:polygon(0 27%,20% 4%,20% 48%,0 100%)}
-.wallR{clip-path:polygon(100% 27%,80% 4%,80% 48%,100% 100%)}
+.ceil{clip-path:polygon(0 0,100% 0,100% 46.7%,80% 13%,20% 13%,0 46.7%);background:linear-gradient(#f5ede0,#fffaf2)}
+.wallB{clip-path:polygon(20% 13%,80% 13%,80% 45%,20% 45%)}
+.wallL{clip-path:polygon(0 46.7%,20% 13%,20% 45%,0 100%)}
+.wallR{clip-path:polygon(100% 46.7%,80% 13%,80% 45%,100% 100%)}
 .w3::after{content:'';position:absolute;inset:0}
 .wallB::after{background:linear-gradient(#0000 75%,#0000001f)}
 .wallL::after{background:linear-gradient(90deg,#00000052,#0000001a)}
@@ -709,53 +709,103 @@ function svgFor(t,b,sf){
  if(sf==null)sf=0.35;
  const d=BT[t],W=d.w,H=d.h,c=(b&&b.c)||d.c,r=(b&&b.r)||d.r,nf=d.fl.filter(f=>!f.side).length;
  let s='',ext='';const D=Math.round(W*0.5),ox=D*sf,oy=-D*0.42,pad=D*0.65;
- const f1=v=>(+v).toFixed(1);
- const sideBox=(x,y,w,h,col,topCol)=>{let o='';const xs=ox>=0?x+w:x;
-  if(Math.abs(ox)>0.5)o+=`<polygon points="${f1(xs)},${f1(y)} ${f1(xs+ox)},${f1(y+oy)} ${f1(xs+ox)},${f1(y+h+oy)} ${f1(xs)},${f1(y+h)}" fill="${shade(col,-0.24)}" stroke="#00000026"/>`;
+  const f1=v=>(+v).toFixed(1);
+  const U='bt'+(svgFor._n=(svgFor._n||0)+1);
+  const TEXDEF={kpop:'plaster',haus2:'siding',strand:'siding',villa:'plaster',hochhaus:'plaster',ruhe:'siding',markt:'plaster',baeckerei:'brick',tierladen:'siding',eis:'plaster',friseur:'plaster',pizzeria:'brick',kino:'plaster',buecherei:'brick',buehne:null,schule:'brick',kita:'plaster',uni:'stone',kh:'plaster',hotel:'stone',schwimmbad:'plaster',pferdehof:'siding'};
+  let tex=(b&&b.tex)||TEXDEF[t];if(tex===undefined){const k=String((b&&b.id)||t).split('').reduce((a,ch)=>a+ch.charCodeAt(0),0);tex=['brick','siding','plaster','brick','siding'][k%5];}
+  const TX=tex?`url(#${U}${tex})`:null;
+  const rd=shade(r,-0.32),cd=shade(c,-0.3),cl=shade(c,0.35);
+  const defs=`<defs><pattern id="${U}r" width="14" height="16" patternUnits="userSpaceOnUse"><path d="M0 8 Q3.5 1.5 7 8 Q10.5 1.5 14 8" fill="none" stroke="${rd}" stroke-width="1.1" opacity=".75"/><path d="M-7 16 Q-3.5 9.5 0 16 Q3.5 9.5 7 16 Q10.5 9.5 14 16 Q17.5 9.5 21 16" fill="none" stroke="${rd}" stroke-width="1.1" opacity=".75"/><path d="M2 6 Q3.5 3.5 5 6 M9 6 Q10.5 3.5 12 6" stroke="#fff" stroke-width=".8" opacity=".25" fill="none"/></pattern>
+   <pattern id="${U}brick" width="18" height="10" patternUnits="userSpaceOnUse"><rect x="1" y="1" width="16" height="3.4" fill="${cd}" opacity=".12"/><path d="M0 5 H18 M0 10 H18 M0.5 0 V5 M9 5 V10" stroke="${cl}" stroke-width="1.2" opacity=".8"/><path d="M0 4.6 H18 M0 9.6 H18" stroke="${cd}" stroke-width=".6" opacity=".35"/></pattern>
+   <pattern id="${U}siding" width="12" height="7" patternUnits="userSpaceOnUse"><path d="M0 6.5 H12" stroke="${cd}" stroke-width="1.2" opacity=".45"/><path d="M0 1 H12" stroke="${cl}" stroke-width="1" opacity=".55"/><path d="M5 3 h3" stroke="${cd}" stroke-width=".5" opacity=".25"/></pattern>
+   <pattern id="${U}plaster" width="11" height="11" patternUnits="userSpaceOnUse"><circle cx="2" cy="3" r=".7" fill="${cd}" opacity=".25"/><circle cx="8" cy="8" r=".6" fill="${cd}" opacity=".2"/><circle cx="7" cy="2" r=".5" fill="${cl}" opacity=".6"/></pattern>
+   <pattern id="${U}stone" width="24" height="14" patternUnits="userSpaceOnUse"><path d="M0 7 H24 M0 14 H24 M8 0 V7 M20 7 V14" stroke="${cl}" stroke-width="1.3" opacity=".75"/><rect x="1" y="1" width="6" height="5" fill="${cd}" opacity=".1"/><rect x="10" y="8" width="9" height="5" fill="${cd}" opacity=".12"/></pattern>
+   <linearGradient id="${U}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+   <linearGradient id="${U}wl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".12"/><stop offset=".15" stop-color="#000" stop-opacity="0"/><stop offset=".85" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient></defs>`;
+  const texRect=(x,y,w,h)=>TX?`<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="${TX}"/><rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="url(#${U}wl)"/>`:'';
+  const sideBox=(x,y,w,h,col,topCol)=>{let o='';const xs=ox>=0?x+w:x;
+   if(Math.abs(ox)>0.5){const pts=`${f1(xs)},${f1(y)} ${f1(xs+ox)},${f1(y+oy)} ${f1(xs+ox)},${f1(y+h+oy)} ${f1(xs)},${f1(y+h)}`;o+=`<polygon points="${pts}" fill="${shade(col,-0.24)}" stroke="#00000026"/>`+(TX&&!topCol&&col===c?`<polygon points="${pts}" fill="${TX}" opacity=".7"/>`:'');}
   if(topCol)o+=`<polygon points="${f1(x)},${f1(y)} ${f1(x+w)},${f1(y)} ${f1(x+w+ox)},${f1(y+oy)} ${f1(x+ox)},${f1(y+oy)}" fill="${topCol}" stroke="#00000026"/>`;return o;};
  const sideWins=(x,w,y0,gh,rows)=>{if(Math.abs(ox)<4)return '';const xs=ox>=0?x+w:x;let o='';for(let i=0;i<rows;i++){const y1=y0+i*gh+gh*0.18,y2=y1+gh*0.5;
   o+=`<polygon class="win" points="${f1(xs+ox*.25)},${f1(y1+oy*.25)} ${f1(xs+ox*.7)},${f1(y1+oy*.7)} ${f1(xs+ox*.7)},${f1(y2+oy*.7)} ${f1(xs+ox*.25)},${f1(y2+oy*.25)}" stroke="#fff" stroke-width="1.5"/>`;}return o;};
  const gnd=`matrix(1,0,${f1(-sf*0.5)},0.5,${f1(sf*0.5*H)},${f1(0.5*H)})`;
- const win=(x,y,w,h)=>`<rect class="win" x="${x}" y="${y}" width="${w}" height="${h}" rx="3" stroke="#fff" stroke-width="2"/>`;
+  const FR=['kpop','villa','wohn1'].includes(t)?'#334155':'#ffffff';
+  const win=(x,y,w,h,o)=>{o=o||{};let q='';const fx=f1(x),fy=f1(y),fw=f1(w),fh=f1(h);
+   if(o.shut&&w<44){const sw=w*0.42;q+=`<rect x="${f1(x-sw-1.5)}" y="${fy}" width="${f1(sw)}" height="${fh}" rx="1.5" fill="${shade(r,-0.05)}"/><rect x="${f1(x+w+1.5)}" y="${fy}" width="${f1(sw)}" height="${fh}" rx="1.5" fill="${shade(r,-0.05)}"/>`;
+    for(let k=1;k<5;k++){const yy=f1(y+h*k/5);q+=`<path d="M${f1(x-sw)} ${yy} h${f1(sw-1)} M${f1(x+w+2.5)} ${yy} h${f1(sw-1)}" stroke="${rd}" stroke-width=".8" opacity=".6"/>`;}}
+   q+=`<rect x="${f1(x-2)}" y="${f1(y-2)}" width="${f1(w+4)}" height="${f1(h+4)}" rx="2" fill="${FR}" stroke="#00000030"/>`;
+   q+=`<rect class="win" x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="1"/>`;
+   q+=`<polygon points="${fx},${fy} ${f1(x+w*0.55)},${fy} ${fx},${f1(y+h*0.7)}" fill="url(#${U}g)"/>`;
+   q+=`<path d="M${f1(x+w/2)} ${fy} V${f1(y+h)} M${fx} ${f1(y+h*0.45)} H${f1(x+w)}" stroke="${FR}" stroke-width="${f1(Math.max(1.5,w*0.07))}"/>`;
+   q+=`<rect x="${f1(x-4)}" y="${f1(y+h+1)}" width="${f1(w+8)}" height="3.5" rx="1" fill="${shade(FR==='#ffffff'?'#e5e7eb':FR,-0.1)}"/>`;
+   if(o.box){q+=`<rect x="${f1(x-1)}" y="${f1(y+h+3.5)}" width="${f1(w+2)}" height="5" rx="1" fill="#92400e"/>`;for(let k=0;k<5;k++)q+=`<circle cx="${f1(x+1.5+k*(w-1)/4)}" cy="${f1(y+h+3)}" r="2.3" fill="${['#ef4444','#f9a8d4','#facc15','#f472b6','#fb923c'][k]}"/><circle cx="${f1(x+3+k*(w-1)/4)}" cy="${f1(y+h+4.5)}" r="1.6" fill="#16a34a"/>`;}
+   return q;};
+  const door=(x,y,w,h,col)=>{col=col||'#8b5a2b';let q=`<rect x="${f1(x-3)}" y="${f1(y-3)}" width="${f1(w+6)}" height="${f1(h+3)}" rx="3" fill="${shade(col,-0.35)}"/>`;
+   q+=`<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" rx="2" fill="${col}"/>`;
+   q+=`<rect x="${f1(x+w*0.15)}" y="${f1(y+h*0.1)}" width="${f1(w*0.7)}" height="${f1(h*0.32)}" rx="1.5" fill="#bfe6ff" class="win" stroke="${shade(col,-0.2)}"/>`;
+   q+=`<rect x="${f1(x+w*0.15)}" y="${f1(y+h*0.5)}" width="${f1(w*0.7)}" height="${f1(h*0.38)}" rx="1.5" fill="none" stroke="${shade(col,-0.25)}" stroke-width="1"/>`;
+   q+=`<circle cx="${f1(x+w*0.82)}" cy="${f1(y+h*0.56)}" r="${f1(Math.max(1.4,w*0.06))}" fill="#facc15"/>`;
+   q+=`<rect x="${f1(x-6)}" y="${f1(y+h-1)}" width="${f1(w+12)}" height="4" rx="1" fill="#9ca3af"/>`;
+   q+=`<rect x="${f1(x+w+5)}" y="${f1(y+h*0.12)}" width="4" height="6" rx="1.5" fill="#fde68a" class="win" stroke="#334155" stroke-width=".8"/>`;return q;};
+  const bush=(x,y,k)=>{k=k||1;return `<circle cx="${f1(x-6*k)}" cy="${f1(y-4*k)}" r="${f1(6*k)}" fill="#2f8a3a"/><circle cx="${f1(x+6*k)}" cy="${f1(y-4*k)}" r="${f1(6*k)}" fill="#2f8a3a"/><circle cx="${f1(x)}" cy="${f1(y-8*k)}" r="${f1(7*k)}" fill="#3fa34a"/><circle cx="${f1(x-3*k)}" cy="${f1(y-11*k)}" r="${f1(3*k)}" fill="#5cc061"/><circle cx="${f1(x+4*k)}" cy="${f1(y-6*k)}" r="${f1(1.6*k)}" fill="#f472b6"/><circle cx="${f1(x-7*k)}" cy="${f1(y-6*k)}" r="${f1(1.4*k)}" fill="#facc15"/>`;};
+  const garden=()=>{const y=H-5;let q='';const L0=-pad*0.95,L1=W*0.08,R0=W*0.92,R1=W+pad*0.95;
+   q+=`<rect x="${f1(L0)}" y="${f1(y-3)}" width="${f1(R1-L0)}" height="8" rx="4" fill="#6fbf4f"/>`;
+   for(let x=L0+3;x<R1;x+=9){q+=`<path d="M${f1(x)} ${f1(y+3)} l-1.5 -4 M${f1(x+3)} ${f1(y+3)} l1 -5" stroke="#4e9a35" stroke-width="1.1"/>`;}
+   const fence=(a,z)=>{let f='';for(let x=a;x<=z;x+=7)f+=`<path d="M${f1(x)} ${f1(y+1)} V${f1(y-13)} l2.2 -3 l2.2 3 V${f1(y+1)}Z" fill="#fff" stroke="#cbd5e1" stroke-width=".7"/>`;f+=`<rect x="${f1(a-1)}" y="${f1(y-10)}" width="${f1(z-a+6.4)}" height="2" fill="#fff"/><rect x="${f1(a-1)}" y="${f1(y-4)}" width="${f1(z-a+6.4)}" height="2" fill="#fff"/>`;return f;};
+   q+=fence(L0+2,L1-14)+fence(R0+6,R1-8);
+   q+=bush(L1+4,y,1)+bush(R0-4,y,1);
+   for(let k=0;k<9;k++){const x=L0+6+k*((L1-L0-16)/8);q+=`<path d="M${f1(x)} ${f1(y)} v-6" stroke="#16a34a" stroke-width="1"/><circle cx="${f1(x)}" cy="${f1(y-7)}" r="2.2" fill="${['#ef4444','#facc15','#a855f7','#f472b6'][k%4]}"/>`;}
+   return q;};
  const sign=(x,y,sz)=>`<text x="${x}" y="${y}" font-size="${sz}" text-anchor="middle" dominant-baseline="central">${d.e}</text>`;
  const shadow=`<ellipse cx="${W/2}" cy="${H-5}" rx="${W*0.47}" ry="8" fill="#0002"/>`;
  switch(d.sh){
   case 'house':{const rh=H*0.36,bx=W*0.1,bw=W*0.8,by=rh-2,bh=H-by-6;
-   s+=shadow+`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="6" fill="${c}" stroke="#0002" stroke-width="2"/>`;
-   s+=`<polygon points="${W*0.03},${rh+4} ${W/2},6 ${W*0.97},${rh+4}" fill="${r}" stroke="#0003" stroke-width="2" stroke-linejoin="round"/>`;
-   const rows=Math.min(nf,3),cols=W>190?4:3,gw=bw/cols,gh=(bh-6)/rows,dc=Math.floor(cols/2);
-   for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){if(i===rows-1&&j===dc)continue;s+=win(bx+j*gw+gw*0.22,by+6+i*gh+gh*0.18,gw*0.56,gh*0.5);}
-   const dw=Math.min(28,gw*0.62),dh=Math.min(40,gh*0.82);
-   s+=`<rect x="${bx+dc*gw+(gw-dw)/2}" y="${H-6-dh}" width="${dw}" height="${dh}" rx="4" fill="#8b5a2b"/>`;
-   s+=sign(W/2,rh*0.64,rh*0.42);
+    s+=shadow+`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="3" fill="${c}" stroke="#0002" stroke-width="2"/>`+texRect(bx,by,bw,bh);
+    s+=`<rect x="${f1(bx-2)}" y="${f1(H-14)}" width="${f1(bw+4)}" height="9" fill="${shade(c,-0.25)}"/>`+(tex!=='stone'?`<rect x="${f1(bx-2)}" y="${f1(H-14)}" width="${f1(bw+4)}" height="9" fill="url(#${U}stone)"/>`:'');
+    {const cx0=W*0.68,cw=W*0.08;s+=`<rect x="${f1(cx0)}" y="${f1(rh*0.18)}" width="${f1(cw)}" height="${f1(rh*0.6)}" fill="#a0522d"/><rect x="${f1(cx0)}" y="${f1(rh*0.18)}" width="${f1(cw)}" height="${f1(rh*0.6)}" fill="url(#${U}brick)"/><rect x="${f1(cx0-2)}" y="${f1(rh*0.14)}" width="${f1(cw+4)}" height="4" rx="1" fill="#6b3a1d"/>`;}
+    const roofPts=`${W*0.03},${rh+4} ${W/2},6 ${W*0.97},${rh+4}`;
+    s+=`<polygon points="${roofPts}" fill="${r}" stroke="#0003" stroke-width="2" stroke-linejoin="round"/><polygon points="${roofPts}" fill="url(#${U}r)"/>`;
+    s+=`<path d="M${f1(W*0.03)} ${f1(rh+4)} L${f1(W/2)} 6 L${f1(W*0.97)} ${f1(rh+4)}" fill="none" stroke="${shade(r,-0.45)}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    s+=`<rect x="${f1(W*0.02)}" y="${f1(rh+3)}" width="${f1(W*0.96)}" height="3.5" rx="1.5" fill="${shade(r,-0.4)}"/>`;
+    const rows=Math.min(nf,3),cols=W>190?4:3,gw=bw/cols,gh=(bh-6)/rows,dc=Math.floor(cols/2);
+    for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){if(i===rows-1&&j===dc)continue;s+=win(bx+j*gw+gw*0.27,by+6+i*gh+gh*0.16,gw*0.46,gh*0.5,{shut:t!=='schule'&&t!=='uni'&&t!=='pferdehof',box:i===rows-1||(i+j)%2===0});}
+    const dw=Math.min(26,gw*0.55),dh=Math.min(38,gh*0.78);
+    s+=door(bx+dc*gw+(gw-dw)/2,H-6-dh,dw,dh,t==='pferdehof'?'#7c2d12':shade(r,-0.15));
+    if(t!=='schule'&&t!=='uni'&&t!=='kh')s+=garden();
+    s+=`<circle cx="${f1(W/2)}" cy="${f1(rh*0.62)}" r="${f1(rh*0.3)}" fill="#fff" opacity=".85" stroke="${shade(r,-0.3)}" stroke-width="2"/>`+sign(W/2,rh*0.64,rh*0.36);
    {const T=[W/2,6],A=[W*0.03,rh+4],B=[W*0.97,rh+4];const pp=(q,o)=>f1(q[0]+(o?ox:0))+','+f1(q[1]+(o?oy:0));
-    const sl=`<polygon points="${pp(A)} ${pp(T)} ${pp(T,1)} ${pp(A,1)}" fill="${shade(r,-0.08)}" stroke="#00000033"/>`,sr=`<polygon points="${pp(T)} ${pp(B)} ${pp(B,1)} ${pp(T,1)}" fill="${shade(r,-0.28)}" stroke="#00000033"/>`;
+     const sl=`<polygon points="${pp(A)} ${pp(T)} ${pp(T,1)} ${pp(A,1)}" fill="${shade(r,-0.08)}" stroke="#00000033"/><polygon points="${pp(A)} ${pp(T)} ${pp(T,1)} ${pp(A,1)}" fill="url(#${U}r)" opacity=".8"/>`,sr=`<polygon points="${pp(T)} ${pp(B)} ${pp(B,1)} ${pp(T,1)}" fill="${shade(r,-0.28)}" stroke="#00000033"/><polygon points="${pp(T)} ${pp(B)} ${pp(B,1)} ${pp(T,1)}" fill="url(#${U}r)" opacity=".8"/>`;
     ext+=sideBox(bx,by,bw,bh,c,null)+sideWins(bx,bw,by+6,gh,rows)+(ox>=0?sl+sr:sr+sl);}
    break;}
   case 'tower':{const bx=W*0.12,bw=W*0.76,by=H*0.16,bh=H-by-6;
-   s+=shadow+`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="5" fill="${c}" stroke="#0002" stroke-width="2"/>`;
-   s+=`<rect x="${bx-5}" y="${by-8}" width="${bw+10}" height="14" rx="4" fill="${r}"/>`;
+    s+=shadow+`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="3" fill="${c}" stroke="#0002" stroke-width="2"/>`+texRect(bx,by,bw,bh);
+    s+=`<rect x="${bx-5}" y="${by-8}" width="${bw+10}" height="14" rx="3" fill="${r}"/><rect x="${bx-5}" y="${by+3}" width="${bw+10}" height="3" fill="${shade(r,-0.3)}"/>`;
    s+=`<circle cx="${W/2}" cy="${by-22}" r="${Math.min(22,W*0.16)}" fill="#fff" stroke="${r}" stroke-width="3"/>`+sign(W/2,by-21,Math.min(26,W*0.19));
    const rows=Math.min(nf,7),cols=W>150?3:2,gw=bw/cols,gh=(bh-10)/(rows+0.4);
-   for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){s+=win(bx+j*gw+gw*0.2,by+10+i*gh+gh*0.15,gw*0.6,gh*0.55);}
-   s+=`<rect x="${W/2-14}" y="${H-6-gh*0.5}" width="28" height="${gh*0.5}" rx="3" fill="#8b5a2b"/>`;
+    for(let i=0;i<rows;i++){if(i>0)s+=`<rect x="${f1(bx)}" y="${f1(by+10+i*gh-2)}" width="${f1(bw)}" height="2.5" fill="${shade(c,-0.18)}"/>`;
+     for(let j=0;j<cols;j++){if(i===rows-1&&cols%2&&j===(cols-1)/2)continue;s+=win(bx+j*gw+gw*0.2,by+10+i*gh+gh*0.15,gw*0.6,gh*0.55);
+      if(i<rows-1&&t.startsWith('wohn')||t==='hochhaus'&&i>0&&i<rows-1)s+=`<rect x="${f1(bx+j*gw+gw*0.12)}" y="${f1(by+10+i*gh+gh*0.66)}" width="${f1(gw*0.76)}" height="2" fill="#475569"/>`+[0,1,2,3,4].map(k=>`<rect x="${f1(bx+j*gw+gw*0.13+k*gw*0.18)}" y="${f1(by+10+i*gh+gh*0.66)}" width="1.2" height="${f1(gh*0.18)}" fill="#475569"/>`).join('')+`<rect x="${f1(bx+j*gw+gw*0.12)}" y="${f1(by+10+i*gh+gh*0.83)}" width="${f1(gw*0.76)}" height="1.5" fill="#475569"/>`;}}
+    {const dw=Math.min(26,bw*0.3),dh=Math.min(gh*0.7,36);s+=`<rect x="${f1(W/2-dw/2-6)}" y="${f1(H-6-dh-7)}" width="${f1(dw+12)}" height="5" rx="2" fill="${r}"/>`+door(W/2-dw/2,H-6-dh,dw,dh,t==='kh'?'#0ea5e9':'#475569');}
+    if(t.startsWith('wohn'))s+=garden();else s+=bush(bx+10,H-5,0.9)+bush(bx+bw-10,H-5,0.9);
    ext+=sideBox(bx,by,bw,bh,c,null)+sideWins(bx,bw,by+10,gh,rows)+sideBox(bx-5,by-8,bw+10,14,r,shade(r,0.2));break;}
   case 'shop':{const bwF=d.play?0.6:0.9,bx=W*0.05,bw=W*bwF,by=H*0.3,bh=H-by-6;ext+=sideBox(bx,by,bw,bh,c,shade(c,0.12));
-   s+=shadow+`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="5" fill="${c}" stroke="#0002" stroke-width="2"/>`;
-   s+=`<rect x="${bx+bw*0.15}" y="${H*0.03}" width="${bw*0.7}" height="${H*0.25}" rx="10" fill="#fff" stroke="${r}" stroke-width="3"/>`+sign(bx+bw/2,H*0.155,H*0.17);
+    s+=shadow+`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="3" fill="${c}" stroke="#0002" stroke-width="2"/>`+texRect(bx,by,bw,bh);
+    s+=`<rect x="${bx-3}" y="${by-5}" width="${bw+6}" height="6" rx="2" fill="${shade(c,-0.3)}"/>`;
+    s+=`<rect x="${bx+bw*0.15}" y="${H*0.03}" width="${bw*0.7}" height="${H*0.25}" rx="10" fill="#fff" stroke="${r}" stroke-width="3"/>`+sign(bx+bw/2,H*0.155,H*0.17);
    const n=8,sw=bw/n;
    for(let i=0;i<n;i++){s+=`<rect x="${bx+i*sw}" y="${by}" width="${sw+0.5}" height="${H*0.13}" fill="${i%2?'#fff':r}"/>`;s+=`<circle cx="${bx+i*sw+sw/2}" cy="${by+H*0.13}" r="${sw/2}" fill="${i%2?'#fff':r}"/>`;}
-   s+=win(bx+bw*0.08,by+H*0.24,bw*0.5,bh*0.5)+`<rect x="${bx+bw*0.68}" y="${H-6-bh*0.58}" width="${bw*0.22}" height="${bh*0.58}" rx="4" fill="#8b5a2b"/>`;
+    s+=win(bx+bw*0.08,by+H*0.24,bw*0.5,bh*0.5)+door(bx+bw*0.69,H-6-bh*0.58,bw*0.2,bh*0.58,shade(r,-0.1));
+    s+=`<rect x="${f1(bx+bw*0.06)}" y="${f1(H-14)}" width="${f1(bw*0.54)}" height="8" rx="2" fill="#78350f"/>`+[0,1,2,3,4,5].map(k=>`<circle cx="${f1(bx+bw*0.09+k*bw*0.09)}" cy="${f1(H-15)}" r="3.6" fill="${k%2?'#16a34a':'#22c55e'}"/><circle cx="${f1(bx+bw*0.1+k*bw*0.09)}" cy="${f1(H-18)}" r="1.8" fill="${['#ef4444','#facc15','#f472b6'][k%3]}"/>`).join('');
    if(d.play){const px=W*0.7;s+=`<rect x="${px}" y="${H*0.45}" width="${W*0.27}" height="${H*0.5}" rx="10" fill="#bbf7d0" stroke="#16a34a" stroke-width="2" stroke-dasharray="6 4"/>`;
     s+=`<path d="M${px+12} ${H*0.9} L${px+22} ${H*0.55} L${px+50} ${H*0.55} L${px+60} ${H*0.9}" fill="none" stroke="#ef4444" stroke-width="5" stroke-linejoin="round"/><line x1="${px+30}" y1="${H*0.55}" x2="${px+30}" y2="${H*0.78}" stroke="#555" stroke-width="2"/><line x1="${px+42}" y1="${H*0.55}" x2="${px+42}" y2="${H*0.78}" stroke="#555" stroke-width="2"/><rect x="${px+26}" y="${H*0.78}" width="20" height="5" fill="#f59e0b"/>`;
     s+=`<text x="${W*0.9}" y="${H*0.82}" font-size="22" text-anchor="middle">🛝</text>`;}
    break;}
   case 'villa':{s+=shadow;ext+=sideBox(W*0.04,H*0.45,W*0.66,H*0.55-6,c,shade(r,0.25))+sideBox(W*0.12,H*0.17,W*0.46,H*0.28,c,shade(r,0.25));
-   s+=`<rect x="${W*0.04}" y="${H*0.45}" width="${W*0.66}" height="${H*0.5}" rx="5" fill="${c}" stroke="#0002" stroke-width="2"/>`;
-   s+=`<rect x="${W*0.12}" y="${H*0.17}" width="${W*0.46}" height="${H*0.3}" rx="5" fill="${c}" stroke="#0002" stroke-width="2"/>`;
+    s+=`<rect x="${W*0.04}" y="${H*0.45}" width="${W*0.66}" height="${H*0.5}" rx="3" fill="${c}" stroke="#0002" stroke-width="2"/>`+texRect(W*0.04,H*0.45,W*0.66,H*0.5);
+    s+=`<rect x="${W*0.12}" y="${H*0.17}" width="${W*0.46}" height="${H*0.3}" rx="3" fill="${c}" stroke="#0002" stroke-width="2"/>`+texRect(W*0.12,H*0.17,W*0.46,H*0.3)+`<rect x="${W*0.44}" y="${H*0.17}" width="${W*0.14}" height="${H*0.3}" fill="#b07a46"/><rect x="${W*0.44}" y="${H*0.17}" width="${W*0.14}" height="${H*0.3}" fill="url(#${U}siding)"/>`;
    s+=`<rect x="${W*0.02}" y="${H*0.42}" width="${W*0.7}" height="8" rx="3" fill="${r}"/><rect x="${W*0.1}" y="${H*0.14}" width="${W*0.5}" height="8" rx="3" fill="${r}"/>`;
    s+=win(W*0.16,H*0.23,W*0.17,H*0.17)+win(W*0.37,H*0.23,W*0.17,H*0.17)+win(W*0.08,H*0.55,W*0.2,H*0.25)+win(W*0.44,H*0.55,W*0.2,H*0.25);
-   s+=`<rect x="${W*0.31}" y="${H*0.62}" width="${W*0.1}" height="${H*0.33}" rx="3" fill="#8b5a2b"/>`;
+    s+=door(W*0.31,H*0.62,W*0.1,H*0.33,'#78350f')+`<rect x="${f1(W*0.1)}" y="${f1(H*0.42)}" width="${f1(W*0.5)}" height="2" fill="#94a3b8"/>`+[0,1,2,3,4,5,6,7,8,9].map(k=>`<rect x="${f1(W*0.11+k*W*0.05)}" y="${f1(H*0.36)}" width="1.5" height="${f1(H*0.06)}" fill="#94a3b8"/>`).join('')+bush(W*0.08,H-5,0.9)+bush(W*0.62,H-5,0.9);
    s+=`<rect x="${W*0.73}" y="${H*0.66}" width="${W*0.24}" height="${H*0.24}" rx="10" fill="#38bdf8" stroke="#fff" stroke-width="4"/><text x="${W*0.85}" y="${H*0.58}" font-size="26" text-anchor="middle">🌴</text>`;
    s+=sign(W*0.35,H*0.07,H*0.12);break;}
   case 'park':{s+=`<g transform="${gnd}"><rect x="4" y="${H*0.14}" width="${W-8}" height="${H*0.82}" rx="22" fill="${c}" stroke="${r}" stroke-width="7" stroke-dasharray="10 6"/><rect x="${W*0.4}" y="${H*0.7}" width="${W*0.2}" height="${H*0.26}" fill="#e9d7a5"/></g>`;
@@ -785,7 +835,7 @@ function svgFor(t,b,sf){
    s+=`<path d="M${W*0.8} ${H*0.2} Q${W*0.95} ${H*0.4} ${W*0.75} ${H*0.55} Q${W*0.6} ${H*0.65} ${W*0.65} ${H*0.75}" fill="none" stroke="#f97316" stroke-width="9" stroke-linecap="round"/>`;
    s+=`<text x="${W*0.2}" y="${H*0.62}" font-size="22">🌴</text>`+sign(W*0.45,H*0.4,H*0.16);break;}
  }
- return `<svg viewBox="${f1(-pad)} ${f1(-24-D*0.42)} ${f1(W+2*pad)} ${f1(H+28+D*0.42)}" width="100%" height="100%" overflow="visible">${ext}${s}</svg>`;
+ return `<svg viewBox="${f1(-pad)} ${f1(-24-D*0.42)} ${f1(W+2*pad)} ${f1(H+28+D*0.42)}" width="100%" height="100%" overflow="visible">${defs}${ext}${s}</svg>`;
 }
 
 /* ---------------- Zustand ---------------- */
@@ -853,7 +903,7 @@ function spawnFloat(e,txt){const L=layer();const el=document.createElement('div'
 
 /* ---------------- 3D-Raum (Perspektive) ---------------- */
 // Gespeicherte Koordinaten: x 0..100 (links→rechts); y>=46 = Boden (46 hinten … 100 vorne), y<46 = Höhe an der Rückwand
-const KB=0.6,YB=48,YT=4,YH=(YB-KB*100)/(1-KB);
+const KB=0.6,YB=45,YT=13,YH=(YB-KB*100)/(1-KB);
 const kOf=t=>1/(1+(1-t)*(1/KB-1));
 function toScreen(x,y){
  if(y>=46){const t=clamp((y-46)/54,0,1),k=kOf(t);return {sx:50+(x-50)*k,sy:YH+(100-YH)*k,k,wall:false};}
@@ -874,8 +924,8 @@ function floorSVG(f){
  else if(F3[2]==='tiles'){for(let x=0;x<=100;x+=10)s+=line(P(x,0),P(x,1));for(let i=1;i<8;i++)s+=line(P(0,i/8),P(100,i/8));}
  else{let seed=7;const r=()=>(seed=(seed*9301+49297)%233280)/233280;for(let i=0;i<140;i++){const x=r()*100,t=r(),sc=toScreen(x,46+t*54);s+=`<ellipse cx="${sc.sx.toFixed(2)}" cy="${sc.sy.toFixed(2)}" rx="${(0.5*sc.k).toFixed(2)}" ry="${(0.35*sc.k).toFixed(2)}" fill="${ln}" opacity=".5"/>`;}}
  s+=`<polygon points="${P(0,0)} ${P(100,0)} ${P(100,1)} ${P(0,1)}" fill="url(#fdark)"/>`;
- s+=`<g stroke="#00000033" stroke-width="1.5" vector-effect="non-scaling-stroke"><line x1="20" y1="4" x2="20" y2="48"/><line x1="80" y1="4" x2="80" y2="48"/><line x1="20" y1="48" x2="0" y2="100"/><line x1="80" y1="48" x2="100" y2="100"/><line x1="20" y1="48" x2="80" y2="48"/></g>`;
- s+=`<g stroke="#ffffffaa" stroke-width="3" vector-effect="non-scaling-stroke"><line x1="20.3" y1="47.6" x2="79.7" y2="47.6"/></g>`;
+ s+=`<g stroke="#00000033" stroke-width="1.5" vector-effect="non-scaling-stroke"><line x1="20" y1="13" x2="20" y2="45"/><line x1="80" y1="13" x2="80" y2="45"/><line x1="20" y1="45" x2="0" y2="100"/><line x1="80" y1="45" x2="100" y2="100"/><line x1="20" y1="45" x2="80" y2="45"/><line x1="20" y1="13" x2="0" y2="46.7"/><line x1="80" y1="13" x2="100" y2="46.7"/><line x1="20" y1="13" x2="80" y2="13"/></g>`;
+ s+=`<g stroke="#ffffffaa" stroke-width="3" vector-effect="non-scaling-stroke"><line x1="20.3" y1="44.6" x2="79.7" y2="44.6"/></g>`;
  return s;
 }
 
@@ -1516,7 +1566,7 @@ function viewCenter(){if(V.mode==='map'){return [CAM.x,CAM.y];}return [rnd(25,75
 function addEntHere(e){S.ents.push(e);const el=mkEnt(e);el.classList.add('pop');layer().appendChild(el);save();}
 function drawerPick(kind,ds){pop(660);const c=viewCenter();
  if(kind==='build'){
-  if(ds.t){const d=BT[ds.t];const b=makeBuilding(ds.t,clamp(c[0]-d.w/2+rnd(-30,30),0,MW-d.w),clamp(c[1]-d.h+rnd(-20,20),20,MH-d.h));S.buildings.push(b);save();closeDrawer();renderMap();const el=document.querySelector(`.bld[data-id="${b.id}"]`);el&&el.classList.add('pop');toast(d.n+' gebaut! Ziehen zum Verschieben, Tippen zum Reingehen.');}
+  if(ds.t){const d=BT[ds.t];const b=makeBuilding(ds.t,clamp(c[0]-d.w/2+rnd(-30,30),0,MW-d.w),clamp(c[1]-d.h+rnd(-20,20),20,MH-d.h));S.buildings.push(b);save();closeDrawer();renderMap();const el=document.querySelector(`.bld[data-id="${b.id}"]`);el&&el.classList.add('pop');toast(d.n+' gebaut! Lang drücken zum Verschieben, tippen zum Reingehen.');}
   else if(ds.k){const it={id:uid(),k:ds.k,x:c[0]+rnd(-80,80),y:c[1]+rnd(-40,40),s:1.6};S.mapItems.push(it);const el=mkItem(it,false);el.classList.add('pop');$('#world').appendChild(el);save();}
   return;}
  if(kind==='furn'){const b=bById(V.b),fl=b.floors[V.f];let it;
