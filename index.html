@@ -349,7 +349,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
-const APP_VERSION='2026-11-14i'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
+const APP_VERSION='2026-11-14j'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 const canSave=(()=>{try{localStorage.setItem('_st','1');localStorage.removeItem('_st');return true}catch(e){return false}})();
 
@@ -522,10 +522,10 @@ const ANIMALS={
  luchs:{n:'Luchs',s:'luchs',sz:10,ar:1.25},
  hund:{n:'Hund',e:'🐕',sz:10},
  katze:{n:'Katze',e:'🐈',sz:8},
- pferd:{n:'Pferd',e:'🐎',sz:20},
- pony:{n:'Pony',e:'🐎',sz:13},
- einhorn:{n:'Einhorn',s:'einhorn',sz:21,ar:1.11},
- einhornbaby:{n:'Einhorn-Baby',s:'einhornbaby',sz:12,ar:1.11},
+ pferd:{n:'Pferd',e:'🐎',sz:25},
+ pony:{n:'Pony',e:'🐎',sz:17},
+ einhorn:{n:'Einhorn',s:'einhorn',sz:25,ar:1.11},
+ einhornbaby:{n:'Einhorn-Baby',s:'einhornbaby',sz:16,ar:1.11},
  koala:{n:'Koala',s:'koala',sz:10,ar:1},
  koalafoto:{n:'Koala (Foto)',img:1,parts:1,pup:'koala',sz:12,ar:1.116},
  pinguin:{n:'Pinguin',e:'🐧',sz:9},
@@ -548,6 +548,16 @@ const ANIMALS={
  tigo:{n:'Tigo',e:'🐅',sz:14,deco:'🎀',star:1},
  pipa:{n:'Pipa',e:'🐦',sz:7,deco:'🎵',star:1}
 };
+// Reittiere: x/y = Sattelpunkt im Tierbild (Anteil von Breite / Höhe)
+const RIDE={pferd:{x:.56,y:.535},pony:{x:.58,y:.55},einhorn:{x:.57,y:.45},einhornbaby:{x:.57,y:.45}};
+function riderOf(a){return S.ents.find(p=>p.kind==='person'&&p.ride===a.id&&!p.away);}
+function riderHTML(p,A){const R=RIDE[p._a]||{x:.56,y:.53};const hp=30*(p.L.h||1)*0.6*0.8/A.sz*100;
+ const sv=personSVG(p.L).replace('overflow="visible"','overflow="hidden"').replace(/viewBox="[^"]*"/,'viewBox="0 0 100 120"').replace('<svg','<svg width="100%" height="100%"');
+ return `<div class="rider" style="position:absolute;left:${(R.x*100).toFixed(1)}%;top:${(R.y*100-hp).toFixed(1)}%;height:${hp.toFixed(1)}%;aspect-ratio:100/120;transform:translateX(-50%);pointer-events:none">${sv}</div>`;}
+function mountRide(p,a){p.ride=a.id;p.loc=JSON.parse(JSON.stringify(a.loc));p.x=a.x;p.y=a.y;p.sleep=false;p.sit=false;p.swim=false;p.bed=null;p.follow=null;
+ if(V.sel===p.id)V.sel=a.id;a.sleep=false;a.follow=null;pop(900);save();render();spawnFloat(a,'✨');toast(p.name+' reitet auf '+a.name+' 🏇');}
+function dismountRide(a){const p=riderOf(a);if(!p)return;delete p.ride;p.loc=JSON.parse(JSON.stringify(a.loc));
+ p.x=a.x+(V.mode==='map'?34:7);p.y=a.y+(V.mode==='map'?6:2);V.sel=null;pop(700);save();render();toast(p.name+' ist abgestiegen');}
 const ANIMAL_ORDER=['capybara','capyfoto','koalafoto','meerschwein','hase','tiger','luchs','hund','katze','pferd','pony','einhorn','einhornbaby','koala','pinguin','kaenguru','giraffe','elefant','zebra','loewe','affe','kuh','schaf','schwein','huhn','ziege','ente','schildi','papagei','igel','maus','tigo','pipa'];
 
 const SKINS=['#ffe0cc','#f6d7c3','#eec1a0','#e0a882','#c68863','#a86b48','#8a5236','#5e3622'];
@@ -1247,7 +1257,7 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show'
 function floorLabel(i,fl){if(fl.side)return fl.n;return (i===0?'Erdgeschoss':i+'. Etage')+' · '+fl.n;}
 function chain(b){return b.floors.map((f,i)=>f.side?-1:i).filter(i=>i>=0);}
 function layer(){return V.mode==='map'?$('#world'):$('#rl');}
-function entsHere(){return S.ents.filter(e=>!e.away&&(V.mode==='map'?!e.loc.b:(e.loc.b===V.b&&e.loc.f===V.f)));}
+function entsHere(){return S.ents.filter(e=>!e.away&&!(e.ride&&S.ents.some(a=>a.id===e.ride))&&(V.mode==='map'?!e.loc.b:(e.loc.b===V.b&&e.loc.f===V.f)));}
 function roomRect(){return $('#room').getBoundingClientRect();}
 function setU(){const r=$('#room');const u=Math.min(r.clientHeight/100,r.clientWidth/150)*1.3;r.style.setProperty('--u',u+'px');}
 function spawnFloat(e,txt){const L=layer();const el=document.createElement('div');el.className='float';el.textContent=txt;
@@ -1530,6 +1540,7 @@ function entHTML(e){
  if(A.img)art=`<div class="art${e.dir?' fl':''}" style="height:calc(var(--u)*${A.sz});width:calc(var(--u)*${A.sz*A.ar})"><div class="br" style="width:100%;height:100%;${dl}"><div class="pupp" style="position:relative;width:100%;height:100%;transform:scaleX(-1);filter:drop-shadow(0 1px 1px #0003)">${PUPPS[A.pup].map(p=>`<img src="${p.src}" alt="" draggable="false"${p.ph?` class="capyleg ${p.ph}"`:''} style="position:absolute;left:${p.l}%;top:${p.t}%;width:${p.w}%;height:${p.h}%;${p.ph?`transform-origin:${p.ox}% ${p.oy}%;`:''}">`).join('')}</div></div></div>`;
  else if(A.s)art=`<div class="art${e.dir?' fl':''}" style="height:calc(var(--u)*${A.sz});width:calc(var(--u)*${A.sz*A.ar})"><div class="br" style="width:100%;height:100%;${dl}">${ASVG[A.s].replace('<svg','<svg width="100%" height="100%"')}</div></div>`;
  else art=`<div class="art${e.dir?' fl':''}" style="font-size:calc(var(--u)*${A.sz})"><span class="br" style="${dl}">${A.e}${A.deco?`<span class="deco">${A.deco}</span>`:''}</span></div>`;
+ if(RIDE[e.a]){const rp=riderOf(e);if(rp){rp._a=e.a;art=art.replace(/<\/div>$/,riderHTML(rp,A)+'</div>');}}
  return `<div class="shd"></div><div class="pose"><div class="bz">${art}</div></div><div class="zz">💤</div>${(A.star||V.sel===e.id)?`<div class="nm">${esc(e.name)}</div>`:''}`;
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -1767,6 +1778,8 @@ function endDrag(d,ev){
  if(overTrash(ev)){askDelete(d.kind,d.o);return;}
  if(d.kind==='ent'){
   const e=d.o;
+  if(e.kind==='person'){const an=document.elementsFromPoint(ev.clientX,ev.clientY).map(n=>n.closest('.ent')).find(n=>{if(!n||n===d.el)return false;const a=eById(n.dataset.id);return a&&a.kind==='animal'&&RIDE[a.a]&&!riderOf(a);});
+   if(an){mountRide(e,eById(an.dataset.id));return;}}
   if(V.mode==='map'){const bl=document.elementsFromPoint(ev.clientX,ev.clientY).map(n=>n.closest('.bld')).find(Boolean);
    if(bl){const b=bById(bl.dataset.id);e.loc={b:b.id,f:0};e.x=rnd(14,24);e.y=rnd(60,80);toast(e.name+' ist jetzt im Haus: '+BT[b.t].n);pop(700);if(V.sel===e.id)V.sel=null;save();render();return;}}
   else{const fx=document.elementsFromPoint(ev.clientX,ev.clientY).map(n=>n.closest('.fix')).find(Boolean);
@@ -1860,6 +1873,7 @@ function renderAction(){
  if(e&&document.querySelector(`.ent[data-id="${e.id}"]`)){
   h=`<span class="an">${e.kind==='person'?'🧑':'🐾'} ${esc(e.name)}</span><button class="ab" data-a="sleep">${e.sleep?'☀️':'💤'}</button><button class="ab" data-a="dance">💃</button>`+
    (e.kind==='person'?`<button class="ab" data-a="wave">👋</button><button class="ab" data-a="jump">🦘</button><button class="ab" data-a="happy">🙌</button><button class="ab" data-a="spin">🌀</button><button class="ab" data-a="sing">🎤</button><button class="ab" data-a="sit">🪑</button><button class="ab" data-a="eat">🍎</button>${e.visitor?'<button class="ab" data-a="home">🏠</button>':'<button class="ab" data-a="edit">✏️</button>'}`:`<button class="ab" data-a="love">❤️</button><button class="ab" data-a="jump">🦘</button><button class="ab" data-a="spin">🌀</button><button class="ab" data-a="roll">🤸</button><button class="ab" data-a="follow">${e.follow?'🛑':'🐾'}</button><button class="ab" data-a="feed">🥕</button><button class="ab" data-a="smaller">➖</button><button class="ab" data-a="bigger">➕</button>${e.visitor?'<button class="ab" data-a="home">🏠</button>':''}`)+`<button class="ab" data-a="close">✖️</button>`;
+  if(e.kind==='animal'&&RIDE[e.a])h+=riderOf(e)?'<button class="ab" data-a="dismount" style="width:auto;padding:0 12px;font-size:16px;font-weight:800">⬇️ Absteigen</button>':'<button class="ab" data-a="ride" style="width:auto;padding:0 12px;font-size:16px;font-weight:800">🏇 Reiten</button>';
   ab.innerHTML=h;ab.classList.add('open');
   ab.querySelectorAll('.ab').forEach(x=>x.onclick=()=>entAction(e,x.dataset.a));return;}
  const it=V.selItem&&(V.mode==='room'?getObj('item',V.selItem):getObj('mitem',V.selItem));
@@ -1877,6 +1891,8 @@ function entAction(e,a){const el=document.querySelector(`.ent[data-id="${e.id}"]
   case 'happy':playAnim(el,'happy',1400);spawnFloat(e,'✨');break;
   case 'spin':if(e.kind==='person')animAng(e,[0,360],1100);else playAnim(el,'spin',1050);break;
   case 'smaller':case 'bigger':{e.s=Math.round(clamp((e.s||1)*(a==='bigger'?1.2:1/1.2),0.4,3.5)*100)/100;refreshEnt(e);toast(e.name+': '+Math.round(e.s*100)+' %');break;}
+  case 'ride':{const ps=entsHere().filter(o=>o.kind==='person'&&!o.visitor);if(!ps.length){toast('Hier ist keine Figur zum Reiten');break;}mountRide(nearestOf(ps,e),e);return;}
+  case 'dismount':dismountRide(e);return;
   case 'follow':if(e.follow){e.follow=null;toast(e.name+' bleibt hier');}else{const ps=entsHere().filter(o=>o.kind==='person');if(!ps.length){toast('Hier ist keine Figur zum Folgen');break;}const t=nearestOf(ps,e);e.follow=t.id;e.sleep=false;refreshEnt(e);toast(e.name+' läuft '+t.name+' hinterher 🐾');spawnBubble(e,'❤️');}break;
   case 'roll':playAnim(el,'roll',850);spawnFloat(e,'⭐');break;
   case 'sing':playAnim(el,'sing',3600);[0,700,1400,2100,2800].forEach((t,i)=>setTimeout(()=>spawnFloat(e,i%2?'🎶':'🎵'),t));break;
