@@ -23,6 +23,7 @@ Die App prüft beim Start, beim Zurückkehren und alle 15 Minuten, ob es eine ne
 ## Wunschbriefkasten
 
 Startbildschirm → **💌 Wunschbriefkasten**: Die Kinder tippen oder sprechen ihren Wunsch ein. Die Wünsche bleiben auf dem Tablet gespeichert. Unten im Briefkasten lassen sich die offenen Wünsche kopieren oder verschicken.
+Mit dem [Vermittler](vermittler/README.md) gehen die Wünsche automatisch als Issue an ein privates GitHub-Repo.
 
 ## Stadt von einem anderen Gerät mitnehmen
 
@@ -34,5 +35,6 @@ Startbildschirm → **💾 Spielstand übertragen** → auf dem alten Gerät „
 |---|---|
 | `index.html` | das ganze Spiel |
 | `manifest.webmanifest` | Name und Symbol der App |
+| `vermittler/` | Vermittler für den Wunschbriefkasten (Cloudflare Worker) mit Anleitung |
 | `sw.js` | Offline-Speicher, damit das Spiel ohne Internet startet |
 | `icon-*.png` | App-Symbole |

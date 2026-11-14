@@ -349,7 +349,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
-const APP_VERSION='2026-11-14b'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
+const APP_VERSION='2026-11-14c'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 const canSave=(()=>{try{localStorage.setItem('_st','1');localStorage.removeItem('_st');return true}catch(e){return false}})();
 
@@ -1738,7 +1738,52 @@ function showStart(){
 const WKEY='sternenstadt-wuensche';
 function loadWishes(){const w=lsGet(WKEY,[]);return Array.isArray(w)?w:[];}
 function wishText(list){return 'Sternenstadt-Wünsche:\n'+list.map(w=>'- '+(w.who?w.who+': ':'')+w.text+' ('+new Date(w.t).toLocaleDateString('de-DE')+')').join('\n');}
-let wRec=null;
+let wRec=null,wSending=false,wNote='';
+const VKEY='sternenstadt-vermittler';
+function vermittler(){const v=lsGet(VKEY);return v&&v.url&&v.code?v:null;}
+async function vPost(v,path,body){
+ const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),12000);
+ try{const r=await fetch(v.url.replace(/\/+$/,'')+path,{method:'POST',headers:{'Content-Type':'application/json','X-Kopplung':v.code},body:JSON.stringify(body||{}),signal:ctl.signal});
+  let d={};try{d=await r.json();}catch(e){}return {status:r.status,ok:r.ok&&d.ok,d};}
+ finally{clearTimeout(to);}
+}
+// Schickt alle noch nicht verschickten Wünsche an den Vermittler (→ GitHub)
+async function sendWishes(){
+ const v=vermittler();if(!v||wSending||navigator.onLine===false)return 0;
+ wSending=true;let n=0;
+ try{for(const w of loadWishes().filter(x=>!x.sent)){
+   let r;try{r=await vPost(v,'/wunsch',{id:w.id,who:w.who,text:w.text,t:w.t});}catch(e){break;}
+   if(r.status===401){v.bad=true;lsSet(VKEY,v);break;}
+   if(!r.ok)break;
+   const all=loadWishes();const o=all.find(x=>x.id===w.id);if(o){o.sent=r.d.nummer||true;lsSet(WKEY,all);}n++;}
+ }finally{wSending=false;}
+ if(n&&$('#screen').classList.contains('open')&&$('#wList')){if(wNote)wNote='💌 Dein Wunsch ist bei Mama und Papa angekommen!';showWishes();}
+ return n;
+}
+function showPairing(){
+ const v=lsGet(VKEY)||{};
+ showScreen(`<div class="card" style="text-align:left"><h2 style="text-align:center">🔗 Tablet koppeln</h2>
+  <p style="font-size:15px">Für Mama und Papa: Damit gehen die Wünsche automatisch an euren Vermittler und landen auf GitHub. Adresse und Kopplungscode stehen in der Anleitung (vermittler/README.md).</p>
+  <p style="margin:8px 0 2px"><b>Adresse des Vermittlers</b></p>
+  <input id="pUrl" value="${esc(v.url||'')}" placeholder="https://….workers.dev" inputmode="url" autocapitalize="off" spellcheck="false" style="width:100%;font-size:16px;border-radius:12px;border:2px solid #ddd6fe;padding:8px">
+  <p style="margin:8px 0 2px"><b>Kopplungscode</b></p>
+  <input id="pCode" type="password" value="${esc(v.code||'')}" autocapitalize="off" spellcheck="false" style="width:100%;font-size:16px;border-radius:12px;border:2px solid #ddd6fe;padding:8px">
+  <button class="bigbtn" id="pSave">✅ Prüfen und koppeln</button>
+  <p id="pMsg" style="text-align:center;font-weight:800;min-height:1.4em"></p>
+  ${v.url?'<button class="bigbtn b2" id="pOff">Kopplung aufheben</button>':''}
+  <button class="bigbtn b4" id="pBack">Zurück</button></div>`);
+ const msg=t=>{$('#pMsg').textContent=t;};
+ $('#pSave').onclick=async()=>{pop();let url=$('#pUrl').value.trim();const code=$('#pCode').value.trim();
+  if(!/^https:\/\//.test(url))url='https://'+url.replace(/^\w+:\/\//,'');
+  if(url.length<12||!code){msg('Bitte Adresse und Code eintragen.');return;}
+  msg('Prüfe …');
+  try{const r=await vPost({url,code},'/pruefen');
+   if(r.ok){lsSet(VKEY,{url,code});msg('✅ Gekoppelt!');sendWishes();setTimeout(showWishes,900);}
+   else msg(r.status===401?'❌ Der Kopplungscode stimmt nicht.':'❌ Vermittler antwortet nicht richtig ('+r.status+').');}
+  catch(e){msg('❌ Vermittler nicht erreichbar. Adresse und Internet prüfen.');}};
+ const off=$('#pOff');if(off)off.onclick=()=>{pop();localStorage.removeItem(VKEY);showWishes();};
+ $('#pBack').onclick=()=>{pop();showWishes();};
+}
 function showWishes(){
  let wishes=loadWishes();let who=lsGet(WKEY+'-name','')||'';
  const names=[...new Set(wishes.map(w=>w.who).filter(Boolean))].slice(0,6);
@@ -1755,11 +1800,12 @@ function showWishes(){
   <button class="bigbtn" id="wSend">📮 In den Briefkasten werfen</button>
   <p id="wMsg" style="text-align:center;font-weight:800;min-height:1.4em"></p>
   <h2 style="text-align:center;margin-top:10px">📬 Im Briefkasten (${open.length})</h2>
-  <div id="wList">${wishes.length?wishes.slice().reverse().map(w=>`<div class="wish${w.done?' done':''}"><div class="wtxt"><div class="wmeta">${w.who?esc(w.who)+' · ':''}${new Date(w.t).toLocaleDateString('de-DE')}${w.done?' · ✅ erledigt':''}</div>${esc(w.text)}</div><button data-d="${w.id}" title="erledigt">${w.done?'↩️':'✅'}</button><button data-x="${w.id}" title="löschen">🗑️</button></div>`).join(''):'<p style="text-align:center;color:#6b7280">Noch leer – schreib den ersten Wunsch!</p>'}</div>
-  ${open.length?`<p style="margin-top:14px"><b>Für Mama und Papa</b><br><span style="font-size:15px">Die offenen Wünsche kopieren oder verschicken, um sie umsetzen zu lassen.</span></p>
-  <div style="display:flex;gap:8px"><button class="bigbtn b3" id="wCopy" style="flex:1">📋 Kopieren</button>${navigator.share?'<button class="bigbtn b3" id="wShare" style="flex:1">📤 Verschicken</button>':''}</div>`:''}
+  <div id="wList">${wishes.length?wishes.slice().reverse().map(w=>`<div class="wish${w.done?' done':''}"><div class="wtxt"><div class="wmeta">${w.who?esc(w.who)+' · ':''}${new Date(w.t).toLocaleDateString('de-DE')}${w.done?' · ✅ erledigt':''}${vermittler()?(w.sent?' · 📨 verschickt':' · ⏳ wird verschickt'):''}</div>${esc(w.text)}</div><button data-d="${w.id}" title="erledigt">${w.done?'↩️':'✅'}</button><button data-x="${w.id}" title="löschen">🗑️</button></div>`).join(''):'<p style="text-align:center;color:#6b7280">Noch leer – schreib den ersten Wunsch!</p>'}</div>
+  <p style="margin-top:14px"><b>Für Mama und Papa</b><br><span style="font-size:15px">${vermittler()?(vermittler().bad?'⚠️ Der Kopplungscode stimmt nicht mehr – bitte neu koppeln.':'🔗 Gekoppelt: Wünsche gehen automatisch an euch.'):'Noch nicht gekoppelt. Offene Wünsche könnt ihr kopieren oder verschicken.'}</span></p>
+  ${open.length?`<div style="display:flex;gap:8px"><button class="bigbtn b3" id="wCopy" style="flex:1">📋 Kopieren</button>${navigator.share?'<button class="bigbtn b3" id="wShare" style="flex:1">📤 Verschicken</button>':''}</div>`:''}
+  <button class="bigbtn b4" id="wPair">🔗 ${vermittler()?'Kopplung ändern':'Tablet koppeln'}</button>
   <button class="bigbtn b4" id="wBack">Zurück</button></div>`);
- const msg=t=>{$('#wMsg').textContent=t;};
+ const msg=t=>{$('#wMsg').textContent=t;};if(wNote)msg(wNote);
  const stopRec=()=>{if(wRec){try{wRec.stop();}catch(e){}wRec=null;}const m=$('#wMic');if(m){m.classList.remove('rec');m.textContent='🎤 Wunsch einsprechen';}};
  $('#wNames').querySelectorAll('.namechip').forEach(b=>b.onclick=()=>{pop();$('#wWho').value=b.dataset.n;$('#wNames').querySelectorAll('.namechip').forEach(x=>x.classList.toggle('on',x===b));});
  const mic=$('#wMic');
@@ -1776,12 +1822,14 @@ function showWishes(){
   if(!text){msg('Schreib oder sag zuerst deinen Wunsch. ✏️');return;}
   wishes=loadWishes();wishes.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),who:name,text:text.slice(0,1000),t:Date.now(),done:false});
   if(!lsSet(WKEY,wishes)){msg('❌ Konnte nicht speichern.');return;}
-  lsSet(WKEY+'-name',name);pop(600);showWishes();setTimeout(()=>{const m=$('#wMsg');if(m)m.textContent='💌 Danke! Dein Wunsch ist im Briefkasten.';},50);};
+  lsSet(WKEY+'-name',name);pop(600);wNote=vermittler()?'💌 Danke! Dein Wunsch ist unterwegs zu Mama und Papa.':'💌 Danke! Dein Wunsch ist im Briefkasten.';showWishes();};
  $('#wList').querySelectorAll('button[data-d]').forEach(b=>b.onclick=()=>{pop();const w=loadWishes();const o=w.find(x=>x.id===b.dataset.d);if(o){o.done=!o.done;lsSet(WKEY,w);}stopRec();showWishes();});
  $('#wList').querySelectorAll('button[data-x]').forEach(b=>b.onclick=()=>{pop();dialog('<h2>Wunsch löschen?</h2><p>Dann ist er weg.</p>',[['Ja, löschen',()=>{lsSet(WKEY,loadWishes().filter(x=>x.id!==b.dataset.x));stopRec();showWishes();},'b2'],['Nein, behalten','','b4']]);});
  const c=$('#wCopy');if(c)c.onclick=async()=>{pop();const t=wishText(loadWishes().filter(w=>!w.done));try{await navigator.clipboard.writeText(t);msg('✅ Wünsche kopiert!');}catch(e){$('#wText').value=t;$('#wText').select();msg('Bitte den Text im Feld oben kopieren.');}};
  const sh=$('#wShare');if(sh)sh.onclick=async()=>{pop();try{await navigator.share({title:'Sternenstadt-Wünsche',text:wishText(loadWishes().filter(w=>!w.done))});}catch(e){}};
- $('#wBack').onclick=()=>{pop();stopRec();showStart();};
+ $('#wPair').onclick=()=>{pop();stopRec();wNote='';showPairing();};
+ $('#wBack').onclick=()=>{pop();stopRec();wNote='';showStart();};
+ if(vermittler()&&wishes.some(w=>!w.sent))sendWishes();
 }
 /* ---------------- Spielstand übertragen ---------------- */
 function b64FromBuf(buf){const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s);}
@@ -2124,6 +2172,8 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('online',()=>checkForUpdate());
 setInterval(()=>{if(document.visibilityState==='visible')checkForUpdate();},15*60000);
 setTimeout(()=>checkForUpdate(true),2500);
+setTimeout(sendWishes,4000);
+window.addEventListener('online',()=>sendWishes());
 </script>
 </body>
 </html>
