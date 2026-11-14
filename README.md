@@ -20,6 +20,10 @@ Wenn GitHub Pages eingeschaltet ist, läuft das Spiel unter:
 
 Die App prüft beim Start, beim Zurückkehren und alle 15 Minuten, ob es eine neue Version gibt, und fragt dann: **„Soll das Spiel kurz neu starten?“** Die Stadt bleibt dabei gespeichert. Die aktuelle Version steht klein unten auf dem Startbildschirm.
 
+## Wunschbriefkasten
+
+Startbildschirm → **💌 Wunschbriefkasten**: Die Kinder tippen oder sprechen ihren Wunsch ein. Die Wünsche bleiben auf dem Tablet gespeichert. Unten im Briefkasten lassen sich die offenen Wünsche kopieren oder verschicken.
+
 ## Stadt von einem anderen Gerät mitnehmen
 
 Startbildschirm → **💾 Spielstand übertragen** → auf dem alten Gerät „Code kopieren“, auf dem neuen Gerät einfügen und „Stadt laden“ tippen.

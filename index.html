@@ -299,6 +299,16 @@ img.capyleg{transform-box:border-box}
 input[type=range]{width:100%;height:40px;accent-color:#7c3aed}
 @media (max-width:700px){.bbtn{font-size:14px}.bbtn span{font-size:22px}#title{font-size:18px}.tbtn{padding:0 10px;font-size:16px}#editor{flex-direction:column}.edprev{flex:0 0 40%}}
 @media (orientation:portrait){#editor{flex-direction:column}.edprev{flex:0 0 38%}}
+
+/* Wunschbriefkasten */
+.wish{background:#faf5ff;border-radius:16px;padding:10px 12px;margin:8px 0;display:flex;gap:8px;align-items:flex-start}
+.wish.done{opacity:.55}.wish.done .wtxt{text-decoration:line-through}
+.wish .wtxt{flex:1;font-size:17px;white-space:pre-wrap;word-break:break-word}
+.wish .wmeta{font-size:13px;color:#7c3aed;font-weight:700}
+.wish button{font-size:22px;background:#fff;border-radius:12px;padding:4px 8px;box-shadow:0 2px 0 #ddd6fe}
+.namechip{display:inline-block;border-radius:14px;padding:6px 12px;margin:3px;font-weight:800;font-size:16px;background:#ede9fe;color:#5b21b6}
+.namechip.on{background:#7c3aed;color:#fff}
+#wMic.rec{background:#ef4444;box-shadow:0 5px 0 #991b1b}
 </style>
 </head>
 <body>
@@ -339,7 +349,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
-const APP_VERSION='2026-11-14a'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
+const APP_VERSION='2026-11-14b'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 const canSave=(()=>{try{localStorage.setItem('_st','1');localStorage.removeItem('_st');return true}catch(e){return false}})();
 
@@ -1720,9 +1730,58 @@ function showStart(){
   if(rem<=0){showEnd();return;}
   body=`<div class="timebox">Heute hast du noch <b>${Math.ceil(rem/60)} Minuten</b> Spielzeit.${st.r.bonus?'<br>⭐ Mit 15 Bonus-Minuten, weil gestern Pause war!':''}${st.r.pen?'<br>Heute '+st.r.pen+' Minuten weniger, weil gestern verlängert wurde.':''}</div>`;
   btns=`<button class="bigbtn" id="goBtn">▶️ Spielen</button>`;}
- showScreen(`<div class="card"><div class="logo">🌟</div><h1>Sternenstadt</h1><p>Baue Häuser, richte sie ein und erfinde deine Figuren!</p>${body}${btns}<button class="bigbtn b4" id="rulesBtn">ℹ️ So geht's & Spielzeit-Regeln</button><button class="bigbtn b4" id="xferBtn">💾 Spielstand übertragen</button>${canSave?'':'<p style="color:#b91c1c;font-size:15px">⚠️ Dieser Browser kann nichts speichern. Öffne das Spiel am besten direkt in Chrome.</p>'}<p style="font-size:12px;color:#a78bfa;margin-top:12px">Version ${APP_VERSION}</p></div>`);
+ showScreen(`<div class="card"><div class="logo">🌟</div><h1>Sternenstadt</h1><p>Baue Häuser, richte sie ein und erfinde deine Figuren!</p>${body}${btns}<button class="bigbtn b3" id="wishBtn">💌 Wunschbriefkasten</button><button class="bigbtn b4" id="rulesBtn">ℹ️ So geht's & Spielzeit-Regeln</button><button class="bigbtn b4" id="xferBtn">💾 Spielstand übertragen</button>${canSave?'':'<p style="color:#b91c1c;font-size:15px">⚠️ Dieser Browser kann nichts speichern. Öffne das Spiel am besten direkt in Chrome.</p>'}<p style="font-size:12px;color:#a78bfa;margin-top:12px">Version ${APP_VERSION}</p></div>`);
  const g=$('#goBtn');if(g)g.onclick=()=>{pop(700);warned5=warned1=false;hideScreen();updateClock(remaining(todayState()));render();};
- $('#rulesBtn').onclick=showRules;$('#xferBtn').onclick=()=>{pop();showTransfer();};
+ $('#wishBtn').onclick=()=>{pop();showWishes();};$('#rulesBtn').onclick=showRules;$('#xferBtn').onclick=()=>{pop();showTransfer();};
+}
+/* ---------------- Wunschbriefkasten ---------------- */
+const WKEY='sternenstadt-wuensche';
+function loadWishes(){const w=lsGet(WKEY,[]);return Array.isArray(w)?w:[];}
+function wishText(list){return 'Sternenstadt-Wünsche:\n'+list.map(w=>'- '+(w.who?w.who+': ':'')+w.text+' ('+new Date(w.t).toLocaleDateString('de-DE')+')').join('\n');}
+let wRec=null;
+function showWishes(){
+ let wishes=loadWishes();let who=lsGet(WKEY+'-name','')||'';
+ const names=[...new Set(wishes.map(w=>w.who).filter(Boolean))].slice(0,6);
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ const open=wishes.filter(w=>!w.done);
+ showScreen(`<div class="card" style="text-align:left"><div class="logo" style="text-align:center">💌</div><h2 style="text-align:center">Wunschbriefkasten</h2>
+  <p style="text-align:center">Was wünschst du dir für Sternenstadt?</p>
+  <p style="margin:6px 0 2px"><b>Wer wünscht sich das?</b></p>
+  <div id="wNames">${names.map(n=>`<button class="namechip${n===who?' on':''}" data-n="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+  <input id="wWho" value="${esc(who)}" placeholder="Dein Name" maxlength="20" style="width:100%;font-size:18px;border-radius:12px;border:2px solid #ddd6fe;padding:8px;margin-top:4px">
+  <p style="margin:10px 0 2px"><b>Dein Wunsch</b></p>
+  <textarea id="wText" placeholder="Zum Beispiel: Ich wünsche mir einen Pferdestall 🐴" style="font-family:inherit;width:100%;height:110px;font-size:19px;border-radius:12px;border:2px solid #ddd6fe;padding:8px"></textarea>
+  ${SR?`<button class="bigbtn b2" id="wMic">🎤 Wunsch einsprechen</button>`:`<p style="font-size:15px;color:#6b7280">🎤 Tipp: Auf der Tastatur ist ein Mikrofon. Darauf tippen und den Wunsch einfach sagen!</p>`}
+  <button class="bigbtn" id="wSend">📮 In den Briefkasten werfen</button>
+  <p id="wMsg" style="text-align:center;font-weight:800;min-height:1.4em"></p>
+  <h2 style="text-align:center;margin-top:10px">📬 Im Briefkasten (${open.length})</h2>
+  <div id="wList">${wishes.length?wishes.slice().reverse().map(w=>`<div class="wish${w.done?' done':''}"><div class="wtxt"><div class="wmeta">${w.who?esc(w.who)+' · ':''}${new Date(w.t).toLocaleDateString('de-DE')}${w.done?' · ✅ erledigt':''}</div>${esc(w.text)}</div><button data-d="${w.id}" title="erledigt">${w.done?'↩️':'✅'}</button><button data-x="${w.id}" title="löschen">🗑️</button></div>`).join(''):'<p style="text-align:center;color:#6b7280">Noch leer – schreib den ersten Wunsch!</p>'}</div>
+  ${open.length?`<p style="margin-top:14px"><b>Für Mama und Papa</b><br><span style="font-size:15px">Die offenen Wünsche kopieren oder verschicken, um sie umsetzen zu lassen.</span></p>
+  <div style="display:flex;gap:8px"><button class="bigbtn b3" id="wCopy" style="flex:1">📋 Kopieren</button>${navigator.share?'<button class="bigbtn b3" id="wShare" style="flex:1">📤 Verschicken</button>':''}</div>`:''}
+  <button class="bigbtn b4" id="wBack">Zurück</button></div>`);
+ const msg=t=>{$('#wMsg').textContent=t;};
+ const stopRec=()=>{if(wRec){try{wRec.stop();}catch(e){}wRec=null;}const m=$('#wMic');if(m){m.classList.remove('rec');m.textContent='🎤 Wunsch einsprechen';}};
+ $('#wNames').querySelectorAll('.namechip').forEach(b=>b.onclick=()=>{pop();$('#wWho').value=b.dataset.n;$('#wNames').querySelectorAll('.namechip').forEach(x=>x.classList.toggle('on',x===b));});
+ const mic=$('#wMic');
+ if(mic)mic.onclick=()=>{pop();
+  if(wRec){stopRec();return;}
+  try{const r=new SR();r.lang='de-DE';r.interimResults=true;r.continuous=false;
+   const base=$('#wText').value.trim();
+   r.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;$('#wText').value=(base?base+' ':'')+t;};
+   r.onerror=e=>{msg(e.error==='not-allowed'?'Das Mikrofon ist nicht erlaubt. Nimm das 🎤 auf der Tastatur.':'Hat nicht geklappt – probier es nochmal oder tippe.');stopRec();};
+   r.onend=()=>stopRec();
+   wRec=r;r.start();mic.classList.add('rec');mic.textContent='⏹️ Fertig gesprochen';msg('Ich höre zu … sag deinen Wunsch!');
+  }catch(e){msg('Einsprechen geht hier nicht. Nimm das 🎤 auf der Tastatur.');stopRec();}};
+ $('#wSend').onclick=()=>{stopRec();const text=$('#wText').value.trim();const name=$('#wWho').value.trim();
+  if(!text){msg('Schreib oder sag zuerst deinen Wunsch. ✏️');return;}
+  wishes=loadWishes();wishes.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),who:name,text:text.slice(0,1000),t:Date.now(),done:false});
+  if(!lsSet(WKEY,wishes)){msg('❌ Konnte nicht speichern.');return;}
+  lsSet(WKEY+'-name',name);pop(600);showWishes();setTimeout(()=>{const m=$('#wMsg');if(m)m.textContent='💌 Danke! Dein Wunsch ist im Briefkasten.';},50);};
+ $('#wList').querySelectorAll('button[data-d]').forEach(b=>b.onclick=()=>{pop();const w=loadWishes();const o=w.find(x=>x.id===b.dataset.d);if(o){o.done=!o.done;lsSet(WKEY,w);}stopRec();showWishes();});
+ $('#wList').querySelectorAll('button[data-x]').forEach(b=>b.onclick=()=>{pop();dialog('<h2>Wunsch löschen?</h2><p>Dann ist er weg.</p>',[['Ja, löschen',()=>{lsSet(WKEY,loadWishes().filter(x=>x.id!==b.dataset.x));stopRec();showWishes();},'b2'],['Nein, behalten','','b4']]);});
+ const c=$('#wCopy');if(c)c.onclick=async()=>{pop();const t=wishText(loadWishes().filter(w=>!w.done));try{await navigator.clipboard.writeText(t);msg('✅ Wünsche kopiert!');}catch(e){$('#wText').value=t;$('#wText').select();msg('Bitte den Text im Feld oben kopieren.');}};
+ const sh=$('#wShare');if(sh)sh.onclick=async()=>{pop();try{await navigator.share({title:'Sternenstadt-Wünsche',text:wishText(loadWishes().filter(w=>!w.done))});}catch(e){}};
+ $('#wBack').onclick=()=>{pop();stopRec();showStart();};
 }
 /* ---------------- Spielstand übertragen ---------------- */
 function b64FromBuf(buf){const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s);}
