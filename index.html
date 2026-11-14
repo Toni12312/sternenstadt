@@ -349,7 +349,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
-const APP_VERSION='2026-11-14d'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
+const APP_VERSION='2026-11-14e'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 const canSave=(()=>{try{localStorage.setItem('_st','1');localStorage.removeItem('_st');return true}catch(e){return false}})();
 
@@ -1755,7 +1755,8 @@ async function sendWishes(){
  try{for(const w of loadWishes().filter(x=>!x.sent)){
    let r;try{r=await vPost(v,'/wunsch',{id:w.id,who:w.who,text:w.text,t:w.t});}catch(e){break;}
    if(r.status===401){v.bad=true;lsSet(VKEY,v);break;}
-   if(!r.ok)break;
+   if(!r.ok){const v2=lsGet(VKEY)||v;v2.err=(r.d&&r.d.fehler)||('Fehler '+r.status);lsSet(VKEY,v2);break;}
+   {const v2=lsGet(VKEY)||v;if(v2.err){delete v2.err;lsSet(VKEY,v2);}}
    const all=loadWishes();const o=all.find(x=>x.id===w.id);if(o){o.sent=r.d.nummer||true;lsSet(WKEY,all);}n++;}
  }finally{wSending=false;}
  if(n&&$('#screen').classList.contains('open')&&$('#wList')){if(wNote)wNote='💌 Dein Wunsch ist bei Mama und Papa angekommen!';showWishes();}
@@ -1802,7 +1803,7 @@ function showWishes(){
   <p id="wMsg" style="text-align:center;font-weight:800;min-height:1.4em"></p>
   <h2 style="text-align:center;margin-top:10px">📬 Im Briefkasten (${open.length})</h2>
   <div id="wList">${wishes.length?wishes.slice().reverse().map(w=>`<div class="wish${w.done?' done':''}"><div class="wtxt"><div class="wmeta">${w.who?esc(w.who)+' · ':''}${new Date(w.t).toLocaleDateString('de-DE')}${w.done?' · ✅ erledigt':''}${vermittler()?(w.sent?' · 📨 verschickt':' · ⏳ wird verschickt'):''}</div>${esc(w.text)}</div><button data-d="${w.id}" title="erledigt">${w.done?'↩️':'✅'}</button><button data-x="${w.id}" title="löschen">🗑️</button></div>`).join(''):'<p style="text-align:center;color:#6b7280">Noch leer – schreib den ersten Wunsch!</p>'}</div>
-  <p style="margin-top:14px"><b>Für Mama und Papa</b><br><span style="font-size:15px">${vermittler()?(vermittler().bad?'⚠️ Der Kopplungscode stimmt nicht mehr – bitte neu koppeln.':'🔗 Gekoppelt: Wünsche gehen automatisch an euch.'):'Noch nicht gekoppelt. Offene Wünsche könnt ihr kopieren oder verschicken.'}</span></p>
+  <p style="margin-top:14px"><b>Für Mama und Papa</b><br><span style="font-size:15px">${vermittler()?(vermittler().bad?'⚠️ Der Kopplungscode stimmt nicht mehr – bitte neu koppeln.':'🔗 Gekoppelt: Wünsche gehen automatisch an euch.'+(vermittler().err&&wishes.some(w=>!w.sent)?'<br><b style="color:#b91c1c">⚠️ Vermittler meldet: '+esc(vermittler().err)+'</b>':'')):'Noch nicht gekoppelt. Offene Wünsche könnt ihr kopieren oder verschicken.'}</span></p>
   ${open.length?`<div style="display:flex;gap:8px"><button class="bigbtn b3" id="wCopy" style="flex:1">📋 Kopieren</button>${navigator.share?'<button class="bigbtn b3" id="wShare" style="flex:1">📤 Verschicken</button>':''}</div>`:''}
   <button class="bigbtn b4" id="wPair">🔗 ${vermittler()?'Kopplung ändern':'Tablet koppeln'}</button>
   <button class="bigbtn b4" id="wBack">Zurück</button></div>`);
