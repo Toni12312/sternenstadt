@@ -349,7 +349,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
-const APP_VERSION='2026-11-14e'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
+const APP_VERSION='2026-11-14f'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 const canSave=(()=>{try{localStorage.setItem('_st','1');localStorage.removeItem('_st');return true}catch(e){return false}})();
 
@@ -555,7 +555,10 @@ const CLOTH=['#ef4444','#f97316','#facc15','#22c55e','#14b8a6','#0ea5e9','#6366f
 const HAIRS=[['kurz','Kurz'],['lang','Lang'],['bob','Bob'],['zopf','Pferdeschwanz'],['zoepfe','Zöpfe'],['dutt','Dutt'],['zwei','Zwei Dutts'],['locken','Locken'],['iro','Irokese'],['glatze','Glatze']];
 const TOPS=[['shirt','T-Shirt'],['top','Top'],['hoodie','Hoodie'],['pulli','Ringel-Pulli'],['jacke','Jacke'],['glitzer','Glitzer']];
 const BOTS=[['hose','Hose'],['kurz','Kurze Hose'],['rock','Rock'],['kleid','Kleid']];
-const HATS=[['none','Nichts'],['krone','👑 Krone'],['schleife','🎀 Schleife'],['kopfhoerer','🎧 Kopfhörer'],['muetze','🧢 Mütze'],['cap','Cap'],['blume','🌸 Blume'],['stern','⭐ Stern']];
+const HATS=[['none','Nichts'],['muetze','🧶 Bommelmütze'],['beanie','Strickmütze'],['cap','🧢 Cap'],['sonnenhut','👒 Sonnenhut'],['cowboy','🤠 Cowboyhut'],['zylinder','🎩 Zylinder'],['baske','Baskenmütze'],['zauber','🧙 Zauberhut'],['party','🥳 Partyhut'],['koch','👨‍🍳 Kochmütze'],['krone','👑 Krone'],['schleife','🎀 Schleife'],['kopfhoerer','🎧 Kopfhörer'],['blume','🌸 Blume'],['stern','⭐ Stern']];
+const HAT_DEF={muetze:'#ef4444',beanie:'#1e3a8a',cap:'#0ea5e9',sonnenhut:'#f5deb3',cowboy:'#92400e',zylinder:'#1f2937',baske:'#be123c',zauber:'#6d28d9',party:'#ec4899'};
+const HATC=[...CLOTH,'#f5deb3','#1e3a8a','#be123c','#6d28d9'];
+function hatColor(L){return L.hatC||HAT_DEF[L.hat]||'#ef4444';}
 const GLASSES=[['none','Keine'],['brille','👓 Brille'],['sonne','🕶️ Sonnenbrille']];
 const NAMES=['Mia','Ben','Emma','Noah','Lea','Paul','Lina','Finn','Ida','Tom','Ella','Leo','Nele','Jonas','Mila','Anton','Frida','Elias','Romy','Matti'];
 
@@ -667,13 +670,21 @@ function personSVG(L,head,ang){
  const coverP='M25.5 46 Q25.5 15.5 50 15.5 Q74.5 15.5 74.5 46 Q74.5 63 66 67 Q50 71 34 67 Q25.5 63 25.5 46Z';
  const sideCover=(!bk&&Math.abs(sa)>0.25&&L.hair!=='glatze'&&L.hair!=='iro')?`<clipPath id="hc${Math.round(sa*100)}"><path d="${headShape}"/></clipPath><g clip-path="url(#hc${Math.round(sa*100)})"><path d="${coverP}" fill="${h}" transform="translate(${f2(-sg*(54-30*Math.abs(sa)))} 0)"/></g>`:'';
  const face=earBehind+`<path d="${headShape}" fill="${s}"/><path d="${headShape}" fill="url(#g3r)"/>`+sideCover+faceF+earFront;
- let hat='';
+ let hat='';const hc=hatColor(L),hd=shade(hc,-0.22);
  switch(L.hat){
   case 'krone':hat=`<path d="M34 24 L36 6 L43 17 L50 4 L57 17 L64 6 L66 24Z" fill="#facc15" stroke="#ca8a04" stroke-width="1.5"/>`+C(50,14,2.4,'#ec4899');break;
   case 'schleife':hat=`<path d="M70 24 L58 16 L58 32Z M70 24 L82 16 L82 32Z" fill="#ec4899"/>`+C(70,24,4,'#be185d');break;
   case 'kopfhoerer':hat=`<path d="M24 50 Q24 12 50 12 Q76 12 76 50" fill="none" stroke="#1f2937" stroke-width="5"/><rect x="16" y="40" width="11" height="18" rx="5" fill="#f472b6"/><rect x="73" y="40" width="11" height="18" rx="5" fill="#f472b6"/>`;break;
-  case 'muetze':hat=`<path d="M22 42 Q22 10 50 10 Q78 10 78 42Z" fill="${t}"/><rect x="21" y="36" width="58" height="9" rx="4" fill="#ffffffcc"/>`+C(50,9,6,'#fff');break;
-  case 'cap':hat=`<path d="M24 36 Q26 12 50 12 Q74 12 76 36Z" fill="${t}"/><path d="M50 33 L92 35 Q92 41 70 40Z" fill="${t}"/>`;break;
+  case 'muetze':hat=`<path d="M23 40 Q22 9 50 9 Q78 9 77 40Z" fill="${hc}"/><g fill="none" stroke="${hd}" stroke-width="1.2" opacity=".45"><path d="M33 37 Q32 20 39 12 M42 37 Q42 18 45 10 M50 37 L50 9 M58 37 Q58 18 55 10 M67 37 Q68 20 61 12"/></g><rect x="21" y="34" width="58" height="11" rx="5" fill="${hd}"/><g stroke="${hc}" stroke-width="1.4" opacity=".5">${[26,31,36,41,46,51,56,61,66,71,76].map(x=>`<line x1="${x}" y1="36" x2="${x}" y2="43"/>`).join('')}</g>`+C(50,8,7.5,mixC(hc,'#ffffff',0.7))+C(48,6,3,'#ffffff');break;
+  case 'beanie':hat=`<path d="M24 38 Q23 11 50 11 Q77 11 76 38Z" fill="${hc}"/><path d="M36 20 Q44 14 54 15" fill="none" stroke="#fff" stroke-width="2" opacity=".25" stroke-linecap="round"/><rect x="22" y="30" width="56" height="13" rx="5" fill="${hd}"/><g stroke="${hc}" stroke-width="1.6" opacity=".55">${[27,32,37,42,47,52,57,62,67,72].map(x=>`<line x1="${x}" y1="32" x2="${x}" y2="41"/>`).join('')}</g>`;break;
+  case 'cap':hat=`<path d="M25 37 Q25 13 50 13 Q75 13 75 37Z" fill="${hc}"/><path d="M50 13 L50 36 M37 16 Q34 26 34 36 M63 16 Q66 26 66 36" stroke="${hd}" stroke-width="1" fill="none" opacity=".5"/>`+C(50,13,2.6,hd)+`<path d="M19 38 Q50 30 81 38 Q78 46 50 45 Q22 46 19 38Z" fill="${hd}"/><path d="M22 38 Q50 32 78 38" stroke="#000" stroke-opacity=".15" stroke-width="1.5" fill="none"/>`;break;
+  case 'sonnenhut':hat=`<ellipse cx="50" cy="33" rx="39" ry="9" fill="${hc}"/><ellipse cx="50" cy="33" rx="39" ry="9" fill="none" stroke="${hd}" stroke-width="1.2"/><path d="M30 33 Q29 11 50 11 Q71 11 70 33Z" fill="${hc}"/><path d="M30 26 Q50 30 70 26 L70.4 32 Q50 36 29.6 32Z" fill="#ec4899"/>`+C(66,27,4,'#f9a8d4')+C(66,27,1.8,'#facc15')+`<g stroke="${hd}" stroke-width=".8" opacity=".35" fill="none"><path d="M18 31 Q50 40 82 31 M14 34 Q50 44 86 34"/></g>`;break;
+  case 'cowboy':hat=`<path d="M10 28 Q14 40 50 38 Q86 40 90 28 Q84 34 50 32 Q16 34 10 28Z" fill="${hd}"/><path d="M31 33 Q28 8 40 9 Q46 10 50 14 Q54 10 60 9 Q72 8 69 33Z" fill="${hc}"/><path d="M50 14 Q49 22 50 30" stroke="${hd}" stroke-width="1.4" fill="none" opacity=".6"/><path d="M30.6 27 Q50 31 69.4 27 L69 32 Q50 35.5 31 32Z" fill="#3f2a14"/>`+C(50,30,1.8,'#facc15');break;
+  case 'zylinder':hat=`<rect x="32" y="0" width="36" height="31" rx="3" fill="${hc}"/><rect x="32" y="21" width="36" height="6" fill="#dc2626"/><path d="M36 3 L36 20" stroke="#fff" stroke-width="2" opacity=".18"/><ellipse cx="50" cy="31" rx="27" ry="5" fill="${hd}"/>`;break;
+  case 'baske':hat=`<g transform="rotate(-10 50 24)"><ellipse cx="50" cy="24" rx="29" ry="11" fill="${hc}"/><path d="M24 27 Q50 36 76 27" stroke="${hd}" stroke-width="2.4" fill="none"/></g>`+C(46,12.5,2.4,hd);break;
+  case 'zauber':hat=`<path d="M28 33 L52 -2 L72 33Z" fill="${hc}"/><path d="M52 -2 Q58 4 60 10" stroke="${hd}" stroke-width="1" fill="none"/><ellipse cx="50" cy="33" rx="32" ry="6" fill="${hd}"/><polygon points="45,14 46.5,18 50.5,18 47.3,20.5 48.5,24.5 45,22 41.5,24.5 42.7,20.5 39.5,18 43.5,18" fill="#facc15"/>`+C(58,24,1.8,'#facc15')+C(53,8,1.4,'#fde68a');break;
+  case 'party':hat=`<path d="M35 28 L50 -1 L65 28Z" fill="${hc}"/><path d="M40.5 18 L59.5 18 M45.5 8.5 L54.5 8.5" stroke="#fff" stroke-width="3" opacity=".7"/>`+C(44,23,1.8,'#facc15')+C(55,13,1.6,'#22d3ee')+C(57,24,1.6,'#a3e635')+C(50,-1,4.5,'#facc15');break;
+  case 'koch':hat=C(37,13,10,'#fff')+C(50,8,12,'#fff')+C(63,13,10,'#fff')+`<rect x="31" y="12" width="38" height="18" fill="#fff"/><path d="M40 14 Q40 22 41 28 M50 12 L50 28 M60 14 Q60 22 59 28" stroke="#e5e7eb" stroke-width="1.2" fill="none"/><rect x="29" y="27" width="42" height="9" rx="3" fill="#f3f4f6" stroke="#d1d5db"/>`;break;
   case 'blume':[[70,20],[76,26],[73,33],[66,32],[64,25]].forEach(p=>hat+=C(p[0],p[1],4.5,'#f9a8d4'));hat+=C(70,27,3.5,'#facc15');break;
   case 'stern':hat=`<polygon points="70,14 73,22 81,22 75,27 77,35 70,30 63,35 65,27 59,22 67,22" fill="#facc15" stroke="#eab308"/>`;break;
  }
@@ -687,7 +698,7 @@ function personSVG(L,head,ang){
  const cover=(bk&&L.hair!=='glatze')?`<path d="M25.5 46 Q25.5 15.5 50 15.5 Q74.5 15.5 74.5 46 Q74.5 63 66 67 Q50 71 34 67 Q25.5 63 25.5 46Z" fill="${h}"/><path d="M25.5 46 Q25.5 15.5 50 15.5 Q74.5 15.5 74.5 46 Q74.5 63 66 67 Q50 71 34 67 Q25.5 63 25.5 46Z" fill="url(#g3r)" opacity=".6"/>`:'';
  const headG=`<g transform="${HT}">${face}${cover}${bk?(back+hsh(back)):''}${bk?'':shiftG(0.12,front+hsh(front))}${shiftG(0.25,hat)}${glG}</g>`;
  const backG=back&&!bk?`<g transform="${HT}">${shiftG(0.1,back+hsh(back))}</g>`:'';
- const vb=head?'27 -4 46 52':'0 0 100 200';
+ const vb=head?(['zylinder','party','zauber','koch'].includes(L.hat)?'24 -9 52 58':'27 -4 46 52'):'0 0 100 200';
  if(head)return `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" overflow="visible">${backG}${body}${headG}</svg>`;
  const kid=(L.h||1)<0.9,WX=kid?1.16:1.24,SY=kid?0.92:0.94,HY=(195-41)*(1-SY),HS=kid?1.04:1.07;
  const BT=`translate(50 195) scale(${WX} ${SY}) translate(-50 -195)`,HTT=`translate(50 ${f2(41+HY)}) scale(${HS}) translate(-50 -41)`;
@@ -897,7 +908,7 @@ function makeBuilding(t,x,y){
 }
 function makeAnimal(k,loc,x,y){return {id:uid(),kind:'animal',a:k,name:ANIMALS[k].n,loc,x,y,dir:0,sleep:false};}
 function makePerson(L,loc,x,y){return {id:uid(),kind:'person',L,name:L.name,loc,x,y,dir:0,sleep:false};}
-function randomLook(){return {name:pick(NAMES),skin:pick(SKINS),hair:pick(HAIRS)[0],hairC:pick(HAIRC),eyes:pick(EYES),top:pick(TOPS)[0],topC:pick(CLOTH),bot:pick(BOTS)[0],botC:pick(CLOTH),shoes:pick(CLOTH),hat:Math.random()<0.6?'none':pick(HATS)[0],glasses:Math.random()<0.8?'none':pick(GLASSES)[0],h:Math.round(rnd(0.72,1.1)*100)/100};}
+function randomLook(){return {name:pick(NAMES),skin:pick(SKINS),hair:pick(HAIRS)[0],hairC:pick(HAIRC),eyes:pick(EYES),top:pick(TOPS)[0],topC:pick(CLOTH),bot:pick(BOTS)[0],botC:pick(CLOTH),shoes:pick(CLOTH),hat:Math.random()<0.6?'none':pick(HATS)[0],hatC:pick(HATC),glasses:Math.random()<0.8?'none':pick(GLASSES)[0],h:Math.round(rnd(0.72,1.1)*100)/100};}
 function newWorld(){
  S={v:1,nid:1,buildings:[],mapItems:[],ents:[],tod:'day',muted:false};
  const add=(t,x,y)=>{const b=makeBuilding(t,x,y);S.buildings.push(b);return b;};
@@ -1657,7 +1668,7 @@ function curLoc(){return V.mode==='map'?{b:null}:{b:V.b,f:V.f};}
 let edL=null,edE=null;
 function openEditor(e){edE=e;edL=e?JSON.parse(JSON.stringify(e.L)):randomLook();if(!e)edL.name='';V.sel=null;renderEditor();$('#editor').classList.add('open');}
 function renderEditor(){
- const L=edL;const sw=(f,cols)=>`<div class="row">${cols.map(c=>`<button class="swb${L[f]===c?' on':''}" style="background:${c}" data-f="${f}" data-v="${c}"></button>`).join('')}</div>`;
+ const L=edL;const sw=(f,cols)=>`<div class="row">${cols.map(c=>`<button class="swb${(f==='hatC'?hatColor(L):L[f])===c?' on':''}" style="background:${c}" data-f="${f}" data-v="${c}"></button>`).join('')}</div>`;
  const ch=(f,opts,prev)=>`<div class="row">${opts.map(o=>`<button class="chb${L[f]===o[0]?' on':''}" data-f="${f}" data-v="${o[0]}">${prev?personSVG(Object.assign({},L,{[f]:o[0]}),true):''}${o[1]}</button>`).join('')}</div>`;
  $('#editor').innerHTML=`<div class="edprev"><div class="pv" style="height:${Math.round(40+30*L.h)}%">${personSVG(L)}</div><input id="edName" maxlength="14" placeholder="Name eingeben" value="${esc(L.name||'')}"><div class="edbtns"><button class="bigbtn b3" id="edRand">🎲 Zufall</button><button class="bigbtn" id="edOk">✅ Fertig</button></div><button class="bigbtn b4" id="edCancel" style="width:90%;margin-top:0">Abbrechen</button></div>
  <div class="edopts">
@@ -1672,6 +1683,7 @@ function renderEditor(){
   <h3>Farbe unten</h3>${sw('botC',CLOTH)}
   <h3>👟 Schuhe</h3>${sw('shoes',CLOTH)}
   <h3>👑 Auf dem Kopf</h3>${ch('hat',HATS)}
+  ${HAT_DEF[L.hat]?`<h3>Farbe ${/hut|zylinder/i.test(L.hat)?'Hut':'Mütze'}</h3>${sw('hatC',HATC)}`:''}
   <h3>👓 Brille</h3>${ch('glasses',GLASSES)}
  </div>`;
  const ed=$('#editor');
