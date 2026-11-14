@@ -349,7 +349,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
-const APP_VERSION='2026-11-14f'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
+const APP_VERSION='2026-11-14g'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 const canSave=(()=>{try{localStorage.setItem('_st','1');localStorage.removeItem('_st');return true}catch(e){return false}})();
 
@@ -524,6 +524,8 @@ const ANIMALS={
  katze:{n:'Katze',e:'🐈',sz:8},
  pferd:{n:'Pferd',e:'🐎',sz:20},
  pony:{n:'Pony',e:'🐎',sz:13},
+ einhorn:{n:'Einhorn',s:'einhorn',sz:21,ar:1.11},
+ einhornbaby:{n:'Einhorn-Baby',s:'einhornbaby',sz:12,ar:1.11},
  koala:{n:'Koala',s:'koala',sz:10,ar:1},
  koalafoto:{n:'Koala (Foto)',img:1,parts:1,pup:'koala',sz:12,ar:1.116},
  pinguin:{n:'Pinguin',e:'🐧',sz:9},
@@ -546,7 +548,7 @@ const ANIMALS={
  tigo:{n:'Tigo',e:'🐅',sz:14,deco:'🎀',star:1},
  pipa:{n:'Pipa',e:'🐦',sz:7,deco:'🎵',star:1}
 };
-const ANIMAL_ORDER=['capybara','capyfoto','koalafoto','meerschwein','hase','tiger','luchs','hund','katze','pferd','pony','koala','pinguin','kaenguru','giraffe','elefant','zebra','loewe','affe','kuh','schaf','schwein','huhn','ziege','ente','schildi','papagei','igel','maus','tigo','pipa'];
+const ANIMAL_ORDER=['capybara','capyfoto','koalafoto','meerschwein','hase','tiger','luchs','hund','katze','pferd','pony','einhorn','einhornbaby','koala','pinguin','kaenguru','giraffe','elefant','zebra','loewe','affe','kuh','schaf','schwein','huhn','ziege','ente','schildi','papagei','igel','maus','tigo','pipa'];
 
 const SKINS=['#ffe0cc','#f6d7c3','#eec1a0','#e0a882','#c68863','#a86b48','#8a5236','#5e3622'];
 const HAIRC=['#2b1b12','#5a3a22','#8b5a2b','#d6a85c','#f4d77e','#c0392b','#fb923c','#e5e7eb','#f472b6','#a78bfa','#60a5fa','#34d399','#111827'];
@@ -748,6 +750,39 @@ function capySVG(){
  <ellipse cx="38.2" cy="19.6" rx="3.9" ry="3.4" fill="#7a4e2b"/><ellipse cx="38.6" cy="20.2" rx="2.2" ry="1.9" fill="#3e2615"/><path d="M35 18.4 Q38 15.6 41.6 18.2" stroke="#b07c4b" stroke-width=".8" fill="none"/>
  </svg>`;}
 ASVG.capy=capySVG();
+function unicornSVG(m){ // m: Mähnenfarben
+ const st=(d,c,w)=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+ return `<svg viewBox="-2 -12 122 110">`
+ // Schweif
+ +st('M98 44 Q114 46 112 66 Q110 80 116 88',m[0],7)+st('M98 46 Q108 54 106 70 Q104 82 108 90',m[1],6)+st('M97 48 Q102 60 100 74 Q99 84 101 90',m[2],5)
+ // hintere Beine (dunkler, weiter weg)
+ +`<rect x="88" y="58" width="8" height="34" rx="4" fill="#ede9fe"/><rect x="42" y="58" width="8" height="34" rx="4" fill="#ede9fe"/>`
+ +`<rect x="88" y="88" width="8" height="5" rx="2" fill="#a78bfa"/><rect x="42" y="88" width="8" height="5" rx="2" fill="#a78bfa"/>`
+ // Körper
+ +`<ellipse cx="68" cy="52" rx="33" ry="17" fill="#ffffff" stroke="#e9d5ff" stroke-width="1.4"/>`
+ // vordere Beine
+ +`<rect x="78" y="60" width="8.5" height="33" rx="4" fill="#ffffff" stroke="#e9d5ff" stroke-width="1.2"/><rect x="32" y="60" width="8.5" height="33" rx="4" fill="#ffffff" stroke="#e9d5ff" stroke-width="1.2"/>`
+ +`<rect x="78" y="88" width="8.5" height="5.5" rx="2" fill="#c4b5fd"/><rect x="32" y="88" width="8.5" height="5.5" rx="2" fill="#c4b5fd"/>`
+ // Hals
+ +`<path d="M36 54 Q27 34 26 16 L42 12 Q47 32 56 44Z" fill="#ffffff" stroke="#e9d5ff" stroke-width="1.2"/>`
+ // Kopf
+ +`<path d="M40 12 Q40 2 30 2 Q20 2 13 14 Q6 24 6 30 Q7 37 14 37 Q20 37 24 31 Q34 24 40 18Z" fill="#ffffff" stroke="#e9d5ff" stroke-width="1.2"/>`
+ +`<ellipse cx="11" cy="31" rx="7" ry="5.5" fill="#fce7f3"/><ellipse cx="9" cy="30" rx="1.3" ry="1.8" fill="#db2777" opacity=".5"/>`
+ +`<path d="M34 6 L39 -4 L41 9Z" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><path d="M36 5 L39 -1 L40 7Z" fill="#fbcfe8"/>`
+ // Horn
+ +`<path d="M27 4 L21 -11 L32 2Z" fill="#facc15" stroke="#eab308" stroke-width=".8"/>`+st('M26 0 L30 -1',"#fff7c2",1)+st('M24 -4 L28 -5',"#fff7c2",1)
+ // Auge
+ +`<ellipse cx="24" cy="17" rx="3" ry="3.4" fill="#312e81"/><circle cx="25" cy="15.8" r="1.1" fill="#fff"/>`+st('M21 14.5 L19 12.5 M23 13.6 L22 11.3 M25.5 13.6 L26 11.3','#312e81',.9)
+ +`<ellipse cx="22" cy="25" rx="3.2" ry="1.8" fill="#f9a8d4" opacity=".6"/>`
+ // Mähne
+ +st('M40 4 Q48 10 44 18 Q40 26 48 32 Q54 38 52 46',m[0],6)+st('M36 6 Q42 12 39 20 Q36 28 43 34 Q48 40 47 48',m[1],5)+st('M33 6 Q37 10 34 16',m[2],4.5)
+ +st('M33 3 Q30 8 31 12',m[2],4)
+ // Glitzer
+ +`<path d="M58 40 l1.2 2.8 2.8 1.2 -2.8 1.2 -1.2 2.8 -1.2 -2.8 -2.8 -1.2 2.8 -1.2Z M76 48 l.9 2 2 .9 -2 .9 -.9 2 -.9 -2 -2 -.9 2 -.9Z" fill="#f0abfc"/>`
+ +`</svg>`;}
+ASVG.einhorn=unicornSVG(['#f9a8d4','#c4b5fd','#93c5fd']);
+ASVG.einhornbaby=unicornSVG(['#fde68a','#f9a8d4','#a7f3d0']);
+
 Object.keys(ASVG).forEach(k=>{const sv=ASVG[k];if(sv.includes('data-noshade'))return;const i=sv.indexOf('>')+1,j=sv.lastIndexOf('</svg>');const inner=sv.slice(i,j);
  const ov=inner.replace(/fill="#(?:[0-9a-fA-F]{3}){1,2}"/g,'fill="url(#g3r)"').replace(/stroke="[^"]*"/g,'stroke="none"');ASVG[k]=sv.slice(0,j)+`<g opacity=".75">${ov}</g></svg>`;});
 
