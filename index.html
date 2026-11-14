@@ -339,6 +339,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+const APP_VERSION='2026-11-14a'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 const canSave=(()=>{try{localStorage.setItem('_st','1');localStorage.removeItem('_st');return true}catch(e){return false}})();
 
@@ -1719,7 +1720,7 @@ function showStart(){
   if(rem<=0){showEnd();return;}
   body=`<div class="timebox">Heute hast du noch <b>${Math.ceil(rem/60)} Minuten</b> Spielzeit.${st.r.bonus?'<br>⭐ Mit 15 Bonus-Minuten, weil gestern Pause war!':''}${st.r.pen?'<br>Heute '+st.r.pen+' Minuten weniger, weil gestern verlängert wurde.':''}</div>`;
   btns=`<button class="bigbtn" id="goBtn">▶️ Spielen</button>`;}
- showScreen(`<div class="card"><div class="logo">🌟</div><h1>Sternenstadt</h1><p>Baue Häuser, richte sie ein und erfinde deine Figuren!</p>${body}${btns}<button class="bigbtn b4" id="rulesBtn">ℹ️ So geht's & Spielzeit-Regeln</button><button class="bigbtn b4" id="xferBtn">💾 Spielstand übertragen</button>${canSave?'':'<p style="color:#b91c1c;font-size:15px">⚠️ Dieser Browser kann nichts speichern. Öffne das Spiel am besten direkt in Chrome.</p>'}</div>`);
+ showScreen(`<div class="card"><div class="logo">🌟</div><h1>Sternenstadt</h1><p>Baue Häuser, richte sie ein und erfinde deine Figuren!</p>${body}${btns}<button class="bigbtn b4" id="rulesBtn">ℹ️ So geht's & Spielzeit-Regeln</button><button class="bigbtn b4" id="xferBtn">💾 Spielstand übertragen</button>${canSave?'':'<p style="color:#b91c1c;font-size:15px">⚠️ Dieser Browser kann nichts speichern. Öffne das Spiel am besten direkt in Chrome.</p>'}<p style="font-size:12px;color:#a78bfa;margin-top:12px">Version ${APP_VERSION}</p></div>`);
  const g=$('#goBtn');if(g)g.onclick=()=>{pop(700);warned5=warned1=false;hideScreen();updateClock(remaining(todayState()));render();};
  $('#rulesBtn').onclick=showRules;$('#xferBtn').onclick=()=>{pop();showTransfer();};
 }
@@ -2016,8 +2017,54 @@ $('#muteBtn').onclick=()=>{S.muted=!S.muted;$('#muteBtn').textContent=S.muted?'�
 window.addEventListener('resize',()=>{if(V.mode==='room')setU();else{mapDims();}});
 load();applyTod();$('#muteBtn').textContent=S.muted?'🔇':'🔊';
 render();requestAnimationFrame(mapTick);
-try{if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')&&!/claude/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
+let swReg=null;
+try{if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')&&!/claude/.test(location.hostname))navigator.serviceWorker.register('sw.js').then(r=>{swReg=r;}).catch(()=>{});}catch(e){}
 showStart();
+
+/* ---------------- Automatische Updates ----------------
+   Bei jeder neuen Version APP_VERSION erhöhen. Die App holt sich beim Start,
+   beim Zurückkehren auf den Bildschirm und alle 15 Minuten die aktuelle index.html
+   vom Server, liest dort APP_VERSION aus und fragt bei einer neueren Version,
+   ob sie neu starten soll. */
+const UPD_KEY='sternenstadt-upd';
+let updLastCheck=0,updAskedAt=0,updChecking=false;
+function updCanCheck(){return /^https?:$/.test(location.protocol)&&!/claude/.test(location.hostname)&&navigator.onLine!==false;}
+async function checkForUpdate(force){
+ if(updChecking||!updCanCheck())return;
+ const now=Date.now();if(!force&&now-updLastCheck<60000)return;
+ updChecking=true;updLastCheck=now;
+ try{
+  const res=await fetch('./index.html?v='+now,{cache:'no-store'});
+  if(!res.ok)return;
+  const m=(await res.text()).match(/const APP_VERSION='([^']+)'/);
+  if(!m||m[1]===APP_VERSION)return;
+  const remote=m[1];
+  // Schutz gegen Endlosschleife: wurde für genau diese Version schon neu gestartet und es kam trotzdem die alte?
+  let tried=null;try{tried=JSON.parse(sessionStorage.getItem(UPD_KEY)||'null');}catch(e){}
+  if(tried&&tried.v===remote&&now-tried.t<10*60000)return;
+  try{if(swReg)swReg.update();}catch(e){}
+  askUpdate(remote);
+ }catch(e){}
+ finally{updChecking=false;}
+}
+function askUpdate(remote){
+ if(Date.now()-updAskedAt<30*60000)return;            // nach „Später“ 30 Min Ruhe
+ if($('#dialog').classList.contains('open')){setTimeout(()=>askUpdate(remote),20000);return;} // anderen Dialog nicht unterbrechen
+ updAskedAt=Date.now();
+ dialog(`<div class="logo">✨</div><h2>Neues Update für Sternenstadt!</h2><p>Es gibt neue Sachen. Soll das Spiel kurz neu starten?</p><p style="font-size:15px;color:#6b7280">Deine Stadt bleibt gespeichert. 💜</p>`,
+  [['🔄 Ja, neu starten',()=>restartForUpdate(remote)],['Später','','b4']]);
+}
+function restartForUpdate(remote){
+ try{saveTime();}catch(e){}
+ try{clearTimeout(saveT);lsSet(SKEY,S);}catch(e){}
+ try{sessionStorage.setItem(UPD_KEY,JSON.stringify({v:remote,t:Date.now()}));}catch(e){}
+ showScreen(`<div class="card"><div class="logo">🌟</div><h2>Sternenstadt startet neu …</h2><p>Einen Moment!</p></div>`);
+ setTimeout(()=>{location.replace(location.pathname+location.search);},700);
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForUpdate();});
+window.addEventListener('online',()=>checkForUpdate());
+setInterval(()=>{if(document.visibilityState==='visible')checkForUpdate();},15*60000);
+setTimeout(()=>checkForUpdate(true),2500);
 </script>
 </body>
 </html>

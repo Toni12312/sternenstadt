@@ -16,6 +16,10 @@ Wenn GitHub Pages eingeschaltet ist, läuft das Spiel unter:
 2. Oben rechts auf **⋮** tippen, dann auf **„App installieren“** oder **„Zum Startbildschirm hinzufügen“**.
 3. Sternenstadt hat jetzt ein eigenes Symbol, startet im Vollbild und läuft auch ohne Internet.
 
+## Updates
+
+Die App prüft beim Start, beim Zurückkehren und alle 15 Minuten, ob es eine neue Version gibt, und fragt dann: **„Soll das Spiel kurz neu starten?“** Die Stadt bleibt dabei gespeichert. Die aktuelle Version steht klein unten auf dem Startbildschirm.
+
 ## Stadt von einem anderen Gerät mitnehmen
 
 Startbildschirm → **💾 Spielstand übertragen** → auf dem alten Gerät „Code kopieren“, auf dem neuen Gerät einfügen und „Stadt laden“ tippen.
