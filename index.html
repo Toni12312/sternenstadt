@@ -322,7 +322,7 @@ input[type=range]{width:100%;height:40px;accent-color:#7c3aed}
   <div id="topbar">
     <button class="tbtn" id="backBtn" style="display:none">⬅️ Karte</button>
     <div id="title">🌟 Sternenstadt</div>
-    <button class="tbtn" id="friendBtn" title="Freunde">🤝</button>
+    <button class="tbtn" id="wishTopBtn" title="Wunschbriefkasten">💌</button><button class="tbtn" id="friendBtn" title="Freunde">🤝</button>
     <button class="tbtn" id="todBtn">☀️ Tag</button>
     <button class="tbtn" id="muteBtn">🔊</button>
     <div id="clock">⏰ 30 Min</div>
@@ -349,7 +349,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
-const APP_VERSION='2026-11-14g'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
+const APP_VERSION='2026-11-14h'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 const canSave=(()=>{try{localStorage.setItem('_st','1');localStorage.removeItem('_st');return true}catch(e){return false}})();
 
@@ -1779,13 +1779,13 @@ function showStart(){
   btns=`<button class="bigbtn" id="goBtn">▶️ Spielen</button>`;}
  showScreen(`<div class="card"><div class="logo">🌟</div><h1>Sternenstadt</h1><p>Baue Häuser, richte sie ein und erfinde deine Figuren!</p>${body}${btns}<button class="bigbtn b3" id="wishBtn">💌 Wunschbriefkasten</button><button class="bigbtn b4" id="rulesBtn">ℹ️ So geht's & Spielzeit-Regeln</button><button class="bigbtn b4" id="xferBtn">💾 Spielstand übertragen</button>${canSave?'':'<p style="color:#b91c1c;font-size:15px">⚠️ Dieser Browser kann nichts speichern. Öffne das Spiel am besten direkt in Chrome.</p>'}<p style="font-size:12px;color:#a78bfa;margin-top:12px">Version ${APP_VERSION}</p></div>`);
  const g=$('#goBtn');if(g)g.onclick=()=>{pop(700);warned5=warned1=false;hideScreen();updateClock(remaining(todayState()));render();};
- $('#wishBtn').onclick=()=>{pop();showWishes();};$('#rulesBtn').onclick=showRules;$('#xferBtn').onclick=()=>{pop();showTransfer();};
+ $('#wishBtn').onclick=()=>{pop();wFromGame=false;showWishes();};$('#rulesBtn').onclick=showRules;$('#xferBtn').onclick=()=>{pop();showTransfer();};
 }
 /* ---------------- Wunschbriefkasten ---------------- */
 const WKEY='sternenstadt-wuensche';
 function loadWishes(){const w=lsGet(WKEY,[]);return Array.isArray(w)?w:[];}
 function wishText(list){return 'Sternenstadt-Wünsche:\n'+list.map(w=>'- '+(w.who?w.who+': ':'')+w.text+' ('+new Date(w.t).toLocaleDateString('de-DE')+')').join('\n');}
-let wRec=null,wSending=false,wNote='';
+let wRec=null,wSending=false,wNote='',wFromGame=false;
 const VKEY='sternenstadt-vermittler';
 const VERMITTLER_URL='https://sternenstadt-vermittler.tonatz79.workers.dev';
 function vermittler(){const v=lsGet(VKEY);return v&&v.url&&v.code?v:null;}
@@ -1853,7 +1853,7 @@ function showWishes(){
   <p style="margin-top:14px"><b>Für Mama und Papa</b><br><span style="font-size:15px">${vermittler()?(vermittler().bad?'⚠️ Der Kopplungscode stimmt nicht mehr – bitte neu koppeln.':'🔗 Gekoppelt: Wünsche gehen automatisch an euch.'+(vermittler().err&&wishes.some(w=>!w.sent)?'<br><b style="color:#b91c1c">⚠️ Vermittler meldet: '+esc(vermittler().err)+'</b>':'')):'Noch nicht gekoppelt. Offene Wünsche könnt ihr kopieren oder verschicken.'}</span></p>
   ${open.length?`<div style="display:flex;gap:8px"><button class="bigbtn b3" id="wCopy" style="flex:1">📋 Kopieren</button>${navigator.share?'<button class="bigbtn b3" id="wShare" style="flex:1">📤 Verschicken</button>':''}</div>`:''}
   <button class="bigbtn b4" id="wPair">🔗 ${vermittler()?'Kopplung ändern':'Tablet koppeln'}</button>
-  <button class="bigbtn b4" id="wBack">Zurück</button></div>`);
+  <button class="bigbtn b4" id="wBack">${wFromGame?'⬅️ Zurück zum Spiel':'Zurück'}</button></div>`);
  const msg=t=>{$('#wMsg').textContent=t;};if(wNote)msg(wNote);
  const stopRec=()=>{if(wRec){try{wRec.stop();}catch(e){}wRec=null;}const m=$('#wMic');if(m){m.classList.remove('rec');m.textContent='🎤 Wunsch einsprechen';}};
  $('#wNames').querySelectorAll('.namechip').forEach(b=>b.onclick=()=>{pop();$('#wWho').value=b.dataset.n;$('#wNames').querySelectorAll('.namechip').forEach(x=>x.classList.toggle('on',x===b));});
@@ -1877,7 +1877,7 @@ function showWishes(){
  const c=$('#wCopy');if(c)c.onclick=async()=>{pop();const t=wishText(loadWishes().filter(w=>!w.done));try{await navigator.clipboard.writeText(t);msg('✅ Wünsche kopiert!');}catch(e){$('#wText').value=t;$('#wText').select();msg('Bitte den Text im Feld oben kopieren.');}};
  const sh=$('#wShare');if(sh)sh.onclick=async()=>{pop();try{await navigator.share({title:'Sternenstadt-Wünsche',text:wishText(loadWishes().filter(w=>!w.done))});}catch(e){}};
  $('#wPair').onclick=()=>{pop();stopRec();wNote='';showPairing();};
- $('#wBack').onclick=()=>{pop();stopRec();wNote='';showStart();};
+ $('#wBack').onclick=()=>{pop();stopRec();wNote='';if(wFromGame){wFromGame=false;hideScreen();}else showStart();};
  if(vermittler()&&wishes.some(w=>!w.sent))sendWishes();
 }
 /* ---------------- Spielstand übertragen ---------------- */
@@ -2174,6 +2174,7 @@ window.addEventListener('resize',()=>{if(V.mode==='room')setU();else{mapDims();}
 load();applyTod();$('#muteBtn').textContent=S.muted?'🔇':'🔊';
 render();requestAnimationFrame(mapTick);
 let swReg=null;
+$('#wishTopBtn').onclick=()=>{pop();if($('#screen').classList.contains('open'))return;wFromGame=true;wNote='';showWishes();};
 try{if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')&&!/claude/.test(location.hostname))navigator.serviceWorker.register('sw.js').then(r=>{swReg=r;}).catch(()=>{});}catch(e){}
 showStart();
 
