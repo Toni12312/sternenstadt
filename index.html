@@ -349,7 +349,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
-const APP_VERSION='2026-11-14h'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
+const APP_VERSION='2026-11-14i'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 const canSave=(()=>{try{localStorage.setItem('_st','1');localStorage.removeItem('_st');return true}catch(e){return false}})();
 
@@ -783,6 +783,277 @@ function unicornSVG(m){ // m: Mähnenfarben
 ASVG.einhorn=unicornSVG(['#f9a8d4','#c4b5fd','#93c5fd']);
 ASVG.einhornbaby=unicornSVG(['#fde68a','#f9a8d4','#a7f3d0']);
 
+/* ---------------- SVG: Tiere mit Tiefe ---------------- */
+// Alle Tiere schauen nach links (wie die Emojis vorher). Hintere Beine sind dunkler, Körper bekommen Licht oben und Schatten unten.
+const TV=(()=>{
+ const f=n=>Math.round(n*10)/10;
+ const E=(cx,cy,rx,ry,c,x='')=>`<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rx)}" ry="${f(ry)}" fill="${c}"${x}/>`;
+ const P=(d,c,x='')=>`<path d="${d}" fill="${c}"${x}/>`;
+ const Ln=(d,c,w,x='')=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${x}/>`;
+ const hl=(cx,cy,rx,ry,o)=>E(cx,cy,rx,ry,'#ffffff',` opacity="${o||0.28}"`);
+ const lo=(cx,cy,rx,ry,o)=>E(cx,cy,rx,ry,'#000000',` opacity="${o||0.12}"`);
+ const eye=(x,y,r)=>{r=r||2.4;return E(x,y,r,r*1.12,'#1b120a')+E(x-r*0.38,y-r*0.42,r*0.42,r*0.42,'#ffffff')+E(x+r*0.3,y+r*0.35,r*0.18,r*0.18,'#ffffff',' opacity=".7"');};
+ const rot=(s,a,cx,cy)=>`<g transform="rotate(${a} ${f(cx)} ${f(cy)})">${s}</g>`;
+ // Bein: oben breiter, unten rund; Huf oder Pfote
+ const leg=(x,top,bot,w,c,foot)=>{const tw=w*1.18;
+  let s=P(`M${f(x-tw/2)} ${f(top)} C${f(x-tw/2)} ${f(top+(bot-top)*0.45)} ${f(x-w/2)} ${f(bot-w)} ${f(x-w/2)} ${f(bot-w*0.45)} Q${f(x-w/2)} ${f(bot)} ${f(x)} ${f(bot)} Q${f(x+w/2)} ${f(bot)} ${f(x+w/2)} ${f(bot-w*0.45)} C${f(x+w/2)} ${f(bot-w)} ${f(x+tw/2)} ${f(top+(bot-top)*0.45)} ${f(x+tw/2)} ${f(top)}Z`,c);
+  s+=E(x-w*0.18,top+(bot-top)*0.35,w*0.18,(bot-top)*0.25,'#ffffff',' opacity=".18"');
+  if(foot&&foot!=='paw')s+=P(`M${f(x-w/2-0.2)} ${f(bot-3.4)} Q${f(x)} ${f(bot-4.2)} ${f(x+w/2+0.2)} ${f(bot-3.4)} L${f(x+w/2+0.6)} ${f(bot)} L${f(x-w/2-0.6)} ${f(bot)}Z`,foot);
+  else s+=E(x-w*0.15,bot-1.3,w*0.66,2,c)+Ln(`M${f(x-w*0.38)} ${f(bot-2)} l0 1.6 M${f(x-w*0.05)} ${f(bot-2.2)} l0 1.7`,shade(c,-0.38),0.6);
+  return s;};
+ const tri=(a,b,c2,col)=>P(`M${a} L${b} L${c2}Z`,col);
+
+ // Schwänze
+ function tail(o,x,y,c,k){const t=o.tail||'thin',d=shade(c,-0.12);
+  switch(t){
+   case 'bushy':return Ln(`M${x} ${y} Q${x+12} ${y-4} ${x+13} ${y-16}`,c,6.5)+Ln(`M${x+10} ${y-10} Q${x+13} ${y-14} ${x+13} ${y-16}`,o.b||shade(c,0.3),3.5);
+   case 'cat':return Ln(`M${x} ${y} C${x+14} ${y+2} ${x+10} ${y-16} ${x+18} ${y-20}`,c,3.6)+(o.tipC?Ln(`M${x+15} ${y-17} L${x+18} ${y-20}`,o.tipC,3.8):'');
+   case 'tiger':{let s=Ln(`M${x} ${y} C${x+14} ${y+4} ${x+12} ${y-14} ${x+20} ${y-18}`,c,3.8);[[x+9,y+1.5],[x+13,y-5],[x+15,y-11]].forEach(p=>s+=E(p[0],p[1],1.1,2.3,'#1f1208'));return s+Ln(`M${x+18} ${y-17} L${x+20} ${y-18}`,'#1f1208',4);}
+   case 'tuft':return Ln(`M${x} ${y} Q${x+10} ${y+4} ${x+11} ${y+18}`,c,2.2)+E(x+11,y+20,2.6,4,k);
+   case 'horse':return Ln(`M${x} ${y-1} Q${x+12} ${y} ${x+12} ${y+22}`,o.mane,5.5)+Ln(`M${x+1} ${y} Q${x+9} ${y+4} ${x+8} ${y+22}`,shade(o.mane,0.18),3)+Ln(`M${x+2} ${y} Q${x+14} ${y+4} ${x+15} ${y+20}`,shade(o.mane,-0.15),2.4);
+   case 'curl':return Ln(`M${x} ${y} q5 -1 5 -5 q0 -3 -3 -2.4 q-2 .8 0 3 q3 2 5 -1`,c,1.8);
+   case 'short':return E(x+1,y,4,3,c);
+   case 'zebra':return Ln(`M${x} ${y} Q${x+8} ${y+3} ${x+9} ${y+16}`,c,2.2)+E(x+9,y+18,2.2,3.6,'#111');
+   default:return Ln(`M${x} ${y} Q${x+10} ${y+2} ${x+11} ${y+14}`,c,2.4);
+  }}
+
+ // Fellmuster auf dem Körper (ohne Schnittmasken: Streifen werden innerhalb der Ellipse berechnet)
+ function pattern(o,bx,by,rx,ry){let s='';const yAt=x=>ry*Math.sqrt(Math.max(0,1-((x-bx)/rx)**2));
+  if(o.pat==='tiger'||o.pat==='zebra'){const dark=o.pat==='tiger'?'#1f1208':'#111111',step=o.pat==='tiger'?6.2:4.6,depth=o.pat==='tiger'?0.62:1.55;
+   for(let x=bx-rx*0.72;x<bx+rx*0.9;x+=step){const h=yAt(x),top=by-h+0.4,len=h*depth,w=o.pat==='tiger'?1.7:1.6,sl=o.pat==='zebra'?2:1;
+    s+=P(`M${f(x-w)} ${f(top)} Q${f(x-w*0.6+sl)} ${f(top+len*0.55)} ${f(x+sl*1.6)} ${f(top+len)} Q${f(x+w*0.7+sl)} ${f(top+len*0.5)} ${f(x+w)} ${f(top)}Z`,dark);}}
+  if(o.pat==='cow'){[[bx-12,by-5,7,5],[bx+8,by-6,9,6],[bx+16,by+4,5,4],[bx-3,by+5,4.5,3.2]].forEach((q,i)=>s+=P(`M${f(q[0]-q[2])} ${f(q[1])} Q${f(q[0]-q[2])} ${f(q[1]-q[3])} ${f(q[0])} ${f(q[1]-q[3]*1.1)} Q${f(q[0]+q[2]*1.2)} ${f(q[1]-q[3]*0.8)} ${f(q[0]+q[2])} ${f(q[1]+q[3]*0.3)} Q${f(q[0]+q[2]*0.4)} ${f(q[1]+q[3]*1.2)} ${f(q[0]-q[2]*0.4)} ${f(q[1]+q[3])} Q${f(q[0]-q[2]*1.2)} ${f(q[1]+q[3]*0.8)} ${f(q[0]-q[2])} ${f(q[1])}Z`,'#1f1d1b'));}
+  if(o.pat==='giraffe'){[[-0.62,-0.35],[-0.25,-0.5],[0.12,-0.45],[-0.45,0.25],[-0.05,0.15],[0.32,0.05],[0.2,0.6],[-0.3,0.65]].forEach(([u,v])=>{const x=bx+u*rx,y=by+v*ry,z=rx/26;
+   s+=P(`M${f(x-3.2*z)} ${f(y-1.8*z)} L${f(x)} ${f(y-3.2*z)} L${f(x+3.4*z)} ${f(y-1.4*z)} L${f(x+2.8*z)} ${f(y+2.3*z)} L${f(x-0.5*z)} ${f(y+3*z)} L${f(x-3.4*z)} ${f(y+1.4*z)}Z`,'#b45309');});}
+  return s;}
+
+ // Köpfe: (hx,hy) = Mitte des Schädels
+ function head(o,hx,hy){const c=o.c,m=o.m||shade(c,0.3),k=o.k||'#2b1d12';let s='';
+  switch(o.head){
+   case 'dog':{const ec=o.ear||shade(c,-0.22);
+    s+=E(hx,hy,10,9.4,c)+hl(hx-3,hy-4,5,3.2)+E(hx-9,hy+3.6,8,5.6,m)+E(hx-16.2,hy+1.6,2.7,2.2,k)+E(hx-16.8,hy+0.9,0.9,0.6,'#ffffff',' opacity=".6"');
+    s+=Ln(`M${hx-15.5} ${hy+4.8} q2.5 3 6 0.6`,shade(m,-0.45),0.8)+(o.tongue?E(hx-12.5,hy+7,1.8,2.4,'#f472b6'):'')+eye(hx-4.5,hy-2.6,2.2);
+    s+=P(`M${hx+1} ${hy-8.5} Q${hx+12} ${hy-8} ${hx+11} ${hy+7} Q${hx+8} ${hy+11} ${hx+4} ${hy+4} Q${hx+2} ${hy-1} ${hx+1} ${hy-8.5}Z`,ec);
+    break;}
+   case 'cat':{const ic='#f9a8d4';
+    s+=tri(`${hx+1} ${hy-7}`,`${hx+7} ${hy-17}`,`${hx+9} ${hy-3}`,shade(c,-0.12));
+    s+=E(hx,hy,9.4,8.6,c)+hl(hx-3,hy-4,4.6,3);
+    s+=tri(`${hx-7.5} ${hy-4}`,`${hx-8.5} ${hy-15.5}`,`${hx-0.5} ${hy-7.5}`,c)+tri(`${hx-6.6} ${hy-5.4}`,`${hx-7.4} ${hy-12.5}`,`${hx-2.6} ${hy-7.6}`,ic);
+    s+=E(hx-6.4,hy+3.4,4.8,3.6,m)+P(`M${hx-11.2} ${hy+1.2} L${hx-8.6} ${hy+1.2} L${hx-9.9} ${hy+3}Z`,'#f472b6');
+    s+=E(hx-3.6,hy-1.8,2.1,2.6,o.eyeC||'#84cc16')+E(hx-3.5,hy-1.8,0.7,2.2,'#111')+E(hx-4.2,hy-2.8,0.6,0.6,'#ffffff');
+    s+=Ln(`M${hx-9} ${hy+3.5} L${hx-17} ${hy+2} M${hx-9} ${hy+4.6} L${hx-17} ${hy+5.6}`,'#ffffff',0.45,' opacity=".8"');
+    break;}
+   case 'bigcat':{const ec=o.earC||c;
+    if(o.maneC){let pts='';for(let i=0;i<28;i++){const a=i/28*Math.PI*2,r=i%2?14:18.5;pts+=`${f(hx+1.5+Math.cos(a)*r)},${f(hy+1+Math.sin(a)*r*1.02)} `;}
+     s+=`<polygon points="${pts}" fill="${o.maneC}"/>`+E(hx+1.5,hy+1,14,14.2,shade(o.maneC,-0.12));}
+    s+=E(hx-6.5,hy-9.5,3.8,3.8,ec)+E(hx+6.5,hy-10,3.8,3.8,ec)+E(hx-6.5,hy-9.3,2,2,'#f9a8d4',' opacity=".7"')+E(hx+6.5,hy-9.8,2,2,'#f9a8d4',' opacity=".7"');
+    s+=E(hx,hy,11.6,10.6,c)+hl(hx-3.5,hy-5,6,3.6);
+    if(o.pat==='tiger')s+=P(`M${hx-1.2} ${hy-10.4} L${hx} ${hy-5.5} L${hx+1.2} ${hy-10.4}Z M${hx-6} ${hy-8.6} L${hx-3.6} ${hy-5.2} L${hx-4.2} ${hy-9.6}Z M${hx+6} ${hy-8.6} L${hx+3.6} ${hy-5.2} L${hx+4.2} ${hy-9.6}Z M${hx+11.4} ${hy-2} L${hx+6.5} ${hy} L${hx+11.2} ${hy+1.6}Z M${hx+11} ${hy+3.6} L${hx+6.5} ${hy+4} L${hx+10.4} ${hy+5.8}Z`,'#1f1208');
+    s+=E(hx-4.6,hy+4.4,4.6,3.8,m)+E(hx+1.2,hy+4.4,4.6,3.8,m)+P(`M${hx-4.4} ${hy+0.6} L${hx+1} ${hy+0.6} L${hx-1.7} ${hy+3.4}Z`,o.noseC||'#f472b6');
+    s+=Ln(`M${hx-1.7} ${hy+3.4} l0 2.2 M${hx-4.2} ${hy+6.2} q2.5 1.2 5 0`,'#3b2418',0.7);
+    s+=E(hx-5,hy-2.4,2.3,2.4,'#facc15')+E(hx+2.4,hy-2.6,2.3,2.4,'#facc15')+E(hx-5,hy-2.3,1.1,1.7,'#1b120a')+E(hx+2.4,hy-2.5,1.1,1.7,'#1b120a')+E(hx-5.6,hy-3.1,0.55,0.55,'#ffffff')+E(hx+1.8,hy-3.3,0.55,0.55,'#ffffff');
+    break;}
+   case 'horse':{
+    s+=tri(`${hx+1.5} ${hy-7.5}`,`${hx+4.5} ${hy-17.5}`,`${hx+7.5} ${hy-6}`,shade(c,-0.12));
+    s+=P(`M${hx+8} ${hy-5} Q${hx+9} ${hy+6} ${hx-1} ${hy+9} L${hx-13} ${hy+11.5} Q${hx-20} ${hy+12} ${hx-20} ${hy+5.5} Q${hx-19.5} ${hy+1} ${hx-13} ${hy-2} L${hx-3} ${hy-8} Q${hx+4} ${hy-11} ${hx+8} ${hy-5}Z`,c);
+    s+=hl(hx-4,hy-4.5,7,2.8)+E(hx-15.5,hy+7,5,4.6,m)+E(hx-18,hy+5.6,0.9,1.4,'#1b120a')+Ln(`M${hx-19} ${hy+9.4} q2.5 1 5 0.2`,shade(m,-0.4),0.7);
+    if(o.blaze)s+=P(`M${hx-6} ${hy-6} L${hx-13} ${hy+2} L${hx-15} ${hy+5} L${hx-11} ${hy+3} L${hx-4} ${hy-5}Z`,'#ffffff',' opacity=".85"');
+    s+=eye(hx-1.6,hy-2.6,2)+tri(`${hx-1.5} ${hy-7.2}`,`${hx} ${hy-17}`,`${hx+3.5} ${hy-7}`,c)+tri(`${hx-0.6} ${hy-8}`,`${hx} ${hy-14}`,`${hx+2} ${hy-8}`,shade(c,-0.25));
+    if(o.mane)s+=Ln(`M${hx+1} ${hy-9} Q${hx-4} ${hy-11} ${hx-6} ${hy-7}`,o.mane,3.4);
+    break;}
+   case 'cow':{
+    s+=E(hx+6.5,hy-5,6.5,2.8,c,` transform="rotate(-18 ${hx+6.5} ${hy-5})"`)+E(hx+6.5,hy-5,3.8,1.4,'#f9a8d4',` opacity=".7" transform="rotate(-18 ${hx+6.5} ${hy-5})"`);
+    if(o.horns)s+=Ln(`M${hx-1} ${hy-8} q-1 -5 -5 -6 M${hx+3} ${hy-8.4} q1 -5 5 -6.5`,'#f5f0e1',2.4);
+    s+=P(`M${hx+6} ${hy-6} Q${hx+8} ${hy+6} ${hx} ${hy+9} L${hx-9} ${hy+11} Q${hx-17} ${hy+11.5} ${hx-17} ${hy+5} Q${hx-16} ${hy-2} ${hx-9} ${hy-6} Q${hx-1} ${hy-11} ${hx+6} ${hy-6}Z`,c);
+    if(o.pat==='cow')s+=P(`M${hx-2} ${hy-8.6} Q${hx+4} ${hy-9} ${hx+5.5} ${hy-3} Q${hx+3} ${hy+1} ${hx-1} ${hy-2} Q${hx-4} ${hy-5} ${hx-2} ${hy-8.6}Z`,'#1f1d1b');
+    s+=hl(hx-5,hy-4,6,2.8)+E(hx-12,hy+6.6,6.8,5,o.m||'#f9a8d4')+E(hx-15,hy+5.6,1.1,1.5,'#9d174d')+E(hx-10.4,hy+5.4,1.1,1.5,'#9d174d')+eye(hx-4,hy-2.4,2.1);
+    break;}
+   case 'pig':{
+    s+=E(hx,hy,10.4,9.4,c)+hl(hx-3,hy-4,5,3)+E(hx-10.6,hy+3,3.6,4.8,shade(c,-0.04))+E(hx-11.4,hy+3,2.6,4,shade(c,0.08))+E(hx-11.8,hy+1.4,0.75,1.1,'#9d174d')+E(hx-11.8,hy+4.6,0.75,1.1,'#9d174d');
+    s+=eye(hx-4,hy-2.2,1.9)+E(hx-5,hy+3.8,2.2,1.4,'#f472b6',' opacity=".45"');
+    s+=tri(`${hx-1} ${hy-7}`,`${hx-9.5} ${hy-13.5}`,`${hx-5} ${hy-2.5}`,shade(c,-0.1))+tri(`${hx+3} ${hy-8}`,`${hx+1} ${hy-15}`,`${hx+8} ${hy-5}`,shade(c,-0.16));
+    break;}
+   case 'sheep':{const face=o.face||'#3f3a36';
+    s+=E(hx+6,hy-1,5.5,2.2,face,` transform="rotate(20 ${hx+6} ${hy-1})"`)+P(`M${hx+4} ${hy-6} Q${hx+5} ${hy+5} ${hx-3} ${hy+8} L${hx-8} ${hy+9} Q${hx-13} ${hy+8.6} ${hx-12.6} ${hy+3.6} Q${hx-11} ${hy-3} ${hx-5} ${hy-6} Q${hx} ${hy-8.5} ${hx+4} ${hy-6}Z`,face);
+    s+=eye(hx-4,hy-1.4,1.8)+E(hx-11,hy+3,0.8,1,'#111');
+    [[hx-4,hy-8,4.2],[hx+1,hy-9,4.6],[hx+5.5,hy-6.6,3.8],[hx-7.5,hy-5.5,3]].forEach(p=>s+=E(p[0],p[1],p[2],p[2]*0.9,o.c)+hl(p[0]-1,p[1]-1.4,p[2]*0.5,p[2]*0.3,0.4));
+    break;}
+   case 'goat':{
+    s+=Ln(`M${hx+1} ${hy-7} q4 -8 11 -4`,'#a8a29e',2.6);
+    s+=P(`M${hx+6} ${hy-5} Q${hx+7} ${hy+5} ${hx-1} ${hy+8} L${hx-10} ${hy+9} Q${hx-16} ${hy+9} ${hx-16} ${hy+4} Q${hx-15} ${hy} ${hx-10} ${hy-3} L${hx-3} ${hy-7} Q${hx+2} ${hy-9.5} ${hx+6} ${hy-5}Z`,c);
+    s+=hl(hx-4,hy-4,5,2.4)+E(hx-13,hy+5.4,3.4,3.2,m)+E(hx-15,hy+4.4,0.7,1,'#111')+P(`M${hx-10} ${hy+8.5} L${hx-12} ${hy+16} L${hx-7} ${hy+9}Z`,o.beard||shade(c,0.1));
+    s+=eye(hx-2.5,hy-2.2,1.9)+E(hx+5,hy-1,5,2,shade(c,-0.08),` transform="rotate(25 ${hx+5} ${hy-1})"`);
+    break;}
+  }
+  return s;}
+
+ // Vierbeiner
+ function quad(o){
+  const W=o.W||120,H=o.H||90,g=H-1.5,c=o.c,cf=shade(c,-0.17),k=o.k||'#2b1d12';
+  const rx=o.brx||30,ry=o.bry||14,legL=o.legL||22,lw=o.lw||7,bx=o.bx||68,by=g-legL-ry*0.42;
+  const fx=bx-rx*0.6,bk=bx+rx*0.58,foot=o.hoof||'paw',footF=o.hoof?shade(o.hoof,-0.15):'paw';
+  const hx=o.hx!=null?o.hx:bx-rx-2,hy=o.hy!=null?o.hy:by-ry-(o.neck||6);
+  let s=`<svg viewBox="0 0 ${W} ${H}">`;
+  s+=tail(o,bx+rx*0.94,by-ry*0.38,c,k);
+  s+=leg(fx+5,by,g-2,lw*0.9,cf,footF)+leg(bk+5,by,g-2,lw*0.9,cf,footF);
+  // Hals
+  const nw=o.nw||10;
+  s+=P(`M${f(bx-rx*0.92)} ${f(by+ry*0.2)} Q${f(hx-2)} ${f((by+hy)/2+2)} ${f(hx-1)} ${f(hy+4)} L${f(hx+nw*0.9)} ${f(hy-1)} Q${f(bx-rx*0.45)} ${f((by+hy)/2-2)} ${f(bx-rx*0.35)} ${f(by-ry*0.85)}Z`,c);
+  if(o.mane&&o.head==='horse')s+=Ln(`M${f(hx+3)} ${f(hy-7)} Q${f(hx+nw*0.9+2)} ${f((by+hy)/2-3)} ${f(bx-rx*0.38)} ${f(by-ry*0.92)}`,o.mane,4.4)+Ln(`M${f(hx+5)} ${f(hy-5)} Q${f(hx+nw*0.9+3)} ${f((by+hy)/2)} ${f(bx-rx*0.3)} ${f(by-ry*0.7)}`,shade(o.mane,-0.15),2.2);
+  if(o.pat==='giraffe')for(let t=0.15;t<0.9;t+=0.2){const x=hx+1+(bx-rx*0.6-hx)*t,y=hy+4+(by-hy)*t;s+=P(`M${f(x-2.4)} ${f(y-1.5)} L${f(x+0.5)} ${f(y-3)} L${f(x+3)} ${f(y-0.6)} L${f(x+1.6)} ${f(y+2.4)} L${f(x-2)} ${f(y+1.8)}Z`,'#b45309');}
+  if(o.pat==='zebra')for(let t=0.1;t<0.85;t+=0.17){const x=hx+2+(bx-rx*0.65-hx)*t,y=hy+3+(by-hy)*t;s+=Ln(`M${f(x-3)} ${f(y-2.5)} L${f(x+5)} ${f(y+1)}`,'#111',1.6);}
+  // Körper
+  if(o.wool){s+=E(bx,by,rx,ry,c);for(let i=0;i<16;i++){const a=i/16*Math.PI*2;s+=E(bx+Math.cos(a)*rx*0.92,by+Math.sin(a)*ry*0.9,5.2,4.6,c);}
+   for(let i=0;i<9;i++){const a=i/9*Math.PI*2;s+=hl(bx+Math.cos(a)*rx*0.55,by+Math.sin(a)*ry*0.5-1.5,3,2,0.32);}}
+  else s+=E(bx,by,rx,ry,c);
+  if(o.b)s+=E(bx+1,by+ry*0.48,rx*0.78,ry*0.44,o.b,' opacity=".75"');
+  s+=pattern(o,bx,by,rx,ry);
+  s+=hl(bx-rx*0.15,by-ry*0.52,rx*0.62,ry*0.28,0.26)+lo(bx+2,by+ry*0.7,rx*0.8,ry*0.25,0.1);
+  // vordere Beine + Hinterbacke
+  s+=leg(fx-2,by+ry*0.1,g,lw,c,foot)+leg(bk-2,by+ry*0.1,g,lw,c,foot);
+  s+=E(bk+1,by+ry*0.1,rx*0.32,ry*0.78,c)+hl(bk-1,by-ry*0.35,rx*0.16,ry*0.3,0.22);
+  if(o.pat==='zebra'||o.pat==='tiger'){const dk=o.pat==='tiger'?'#1f1208':'#111';[0.25,0.5].forEach(t=>{s+=Ln(`M${f(bk-rx*0.26)} ${f(by+ry*(t-0.3))} q${f(rx*0.2)} 2 ${f(rx*0.45)} 0`,dk,1.5);});
+   [fx-2,bk-2].forEach(x=>{for(let y=by+ry+3;y<g-4;y+=5)s+=Ln(`M${f(x-lw*0.5)} ${f(y)} l${f(lw*0.9)} 1`,dk,1.3);});}
+  s+=head(o,hx,hy);
+  if(o.extra)s+=o.extra(hx,hy,bx,by);
+  return s+`</svg>`;}
+
+ // Vögel
+ function bird(o){
+  const W=o.W||80,H=o.H||70,g=H-1.5,c=o.c,w=o.w||shade(c,-0.18),bk=o.beak||'#f59e0b',lg=o.legC||'#f59e0b';
+  const bx=o.bx||44,by=o.by||g-14-12,brx=o.brx||17,bry=o.bry||13,hx=o.hx||bx-brx+2,hy=o.hy||by-bry-2,hr=o.hr||8.5;
+  let s=`<svg viewBox="0 0 ${W} ${H}">`;
+  s+=o.tailSvg?o.tailSvg(bx,by,brx,bry):P(`M${bx+brx-3} ${by-4} L${bx+brx+12} ${by-12} L${bx+brx+10} ${by+2}Z`,w);
+  // Beine
+  [[bx-3,0],[bx+4,0]].forEach(([x],i)=>{const cl=i?shade(lg,-0.15):lg;s+=Ln(`M${x} ${by+bry-2} L${x} ${g-1}`,cl,1.6)+Ln(`M${x} ${g-1} l-4 1 M${x} ${g-1} l-1.5 1.4 M${x} ${g-1} l2.5 1`,cl,1.3);});
+  if(o.webbed)s+=P(`M${bx-9} ${g+0.5} L${bx-3} ${g-1.5} L${bx+1} ${g+0.5}Z M${bx-2} ${g+0.5} L${bx+4} ${g-1.5} L${bx+8} ${g+0.5}Z`,lg);
+  s+=E(bx,by,brx,bry,c)+(o.belly?E(bx-4,by+3,brx*0.7,bry*0.7,o.belly):'')+hl(bx-4,by-bry*0.5,brx*0.6,bry*0.3,0.3);
+  s+=E(bx+3,by-1,brx*0.68,bry*0.58,w,` transform="rotate(-12 ${bx+3} ${by-1})"`)+Ln(`M${bx-2} ${by+1} q6 3 14 0 M${bx} ${by+4} q5 2 11 0`,shade(w,-0.25),0.8,' opacity=".6"');
+  s+=P(`M${f(hx+2)} ${f(hy+4)} Q${f(bx-brx*0.2)} ${f(by-bry*0.4)} ${f(bx-brx*0.55)} ${f(by-bry*0.2)} L${f(bx-brx*0.9)} ${f(by)} Q${f(hx-3)} ${f(hy+8)} ${f(hx-2)} ${f(hy+4)}Z`,o.headC||c);
+  s+=E(hx,hy,hr,hr*0.95,o.headC||c)+hl(hx-2,hy-3,hr*0.5,hr*0.3,0.35);
+  s+=o.beakSvg?o.beakSvg(hx,hy,hr,bk):P(`M${f(hx-hr+1)} ${f(hy-1.6)} L${f(hx-hr-6)} ${f(hy+0.8)} L${f(hx-hr+1)} ${f(hy+2.6)}Z`,bk)+Ln(`M${f(hx-hr+1)} ${f(hy+0.6)} L${f(hx-hr-5)} ${f(hy+0.9)}`,shade(bk,-0.35),0.5);
+  s+=eye(hx-2.5,hy-1.5,1.7);
+  if(o.extra)s+=o.extra(hx,hy,hr,bx,by);
+  return s+`</svg>`;}
+
+ const SV={};
+ SV.hund=quad({c:'#c8894a',b:'#f3dcc0',m:'#f3dcc0',ear:'#8a5a2b',head:'dog',tail:'bushy',brx:24,bry:11,legL:17,lw:6.4,bx:56,W:96,H:70,neck:3,nw:9,tongue:1});
+ SV.katze=quad({c:'#9ca3af',b:'#e5e7eb',m:'#f3f4f6',head:'cat',tail:'cat',tipC:'#4b5563',brx:21,bry:9.5,legL:14,lw:5,bx:50,W:84,H:58,neck:2,nw:8,eyeC:'#84cc16',
+   extra:(hx,hy,bx,by)=>[0,1,2].map(i=>Ln(`M${bx-6+i*7} ${by-9.5+Math.abs(i-1)*0.5} q1.5 3 0 5.5`,'#6b7280',1.6,' opacity=".7"')).join('')});
+ SV.pferd=quad({c:'#8b5a2b',m:'#5b3a1c',mane:'#2b1b12',hoof:'#3f2a14',head:'horse',tail:'horse',brx:30,bry:13,legL:30,lw:6.6,bx:66,W:118,H:104,neck:15,nw:11});
+ SV.pony=quad({c:'#e7c9a0',m:'#c9a27a',mane:'#fde68a',hoof:'#6b4a2a',head:'horse',tail:'horse',brx:26,bry:12.5,legL:20,lw:6.4,bx:60,W:104,H:84,neck:10,nw:10.5});
+ SV.tiger=quad({c:'#f08a24',b:'#fff4e0',m:'#fff4e0',head:'bigcat',pat:'tiger',tail:'tiger',brx:27,bry:12,legL:16,lw:7,bx:62,W:110,H:72,neck:2,nw:12});
+ SV.loewe=quad({c:'#e0a95a',b:'#f6dfb4',m:'#f6dfb4',head:'bigcat',maneC:'#a0522d',noseC:'#5b3a29',tail:'tuft',k:'#7c2d12',brx:27,bry:12.5,legL:17,lw:7.4,bx:64,W:112,H:78,neck:3,nw:12});
+ SV.kuh=quad({c:'#fafaf9',m:'#f9a8d4',head:'cow',pat:'cow',horns:1,tail:'tuft',k:'#1f1d1b',hoof:'#3f3a36',brx:30,bry:14.5,legL:20,lw:7.4,bx:66,W:116,H:86,neck:5,nw:13,
+   extra:(hx,hy,bx,by)=>E(bx+6,by+13.6,5,3,'#f9a8d4')});
+ SV.schaf=quad({c:'#f8f5ef',face:'#3f3a36',head:'sheep',wool:1,tail:'short',hoof:'#292524',brx:22,bry:12,legL:13,lw:5,bx:54,W:92,H:66,neck:2,nw:9});
+ SV.schwein=quad({c:'#f9b4c4',head:'pig',tail:'curl',hoof:'#be7a8c',brx:25,bry:13,legL:11,lw:6,bx:58,W:96,H:62,neck:-3,nw:12});
+ SV.ziege=quad({c:'#e7e2da',m:'#f5f1ea',head:'goat',beard:'#d6d0c4',tail:'short',hoof:'#57534e',brx:22,bry:10.5,legL:18,lw:5,bx:54,W:90,H:72,neck:7,nw:8.5});
+ SV.zebra=quad({c:'#fafafa',m:'#3f3f46',mane:'#111111',hoof:'#18181b',head:'horse',pat:'zebra',tail:'zebra',brx:28,bry:13,legL:24,lw:6.4,bx:64,W:112,H:92,neck:12,nw:11,
+   extra:(hx,hy)=>[0,1,2].map(i=>Ln(`M${hx+4-i*4} ${hy-6+i*0.6} l-1.5 7`,'#111',1.3)).join('')});
+ SV.giraffe=quad({c:'#f5c451',m:'#e8b24a',head:'horse',pat:'giraffe',tail:'tuft',k:'#3b2a20',hoof:'#5b3a29',brx:22,bry:12,legL:34,lw:5.6,bx:56,W:92,H:140,neck:48,nw:9,hx:22,
+   extra:(hx,hy)=>Ln(`M${hx+1} ${hy-7} l-1 -6 M${hx+4.5} ${hy-6} l0.6 -6`,'#b45309',2)+E(hx,hy-13.6,1.8,1.8,'#7c2d12')+E(hx+5,hy-12.6,1.8,1.8,'#7c2d12')});
+
+ // Elefant
+ SV.elefant=(()=>{const c='#9ca3af',cf=shade(c,-0.17),g=88.5;let s=`<svg viewBox="0 0 124 90">`;
+  s+=Ln('M102 44 Q110 50 108 66','#9ca3af',2.6)+E(108,68,2,3.4,'#4b5563');
+  s+=leg(48,48,g-2,12,cf,'#e5e7eb')+leg(92,48,g-2,12,cf,'#e5e7eb');
+  s+=E(72,46,34,23,c)+hl(68,33,20,7,0.28)+lo(74,62,26,6,0.1);
+  s+=leg(41,52,g,13,c,'#f3f4f6')+leg(85,52,g,13,c,'#f3f4f6')+E(87,50,12,17,c);
+  [36,41,46,80,85,90].forEach(x=>s+=E(x,g-1.2,1.5,1,'#e5e7eb'));
+  // Kopf
+  s+=E(34,34,16,15,c)+hl(30,27,8,5,0.3);
+  s+=P('M30 40 Q20 44 18 56 Q17 68 22 74 Q25 76 26 73 Q22 66 24 56 Q26 48 34 46Z',c)+Ln('M21 50 q2 1 4 0 M20 56 q2 1 4 0 M20 62 q2 1 4 0 M21 68 q2 .8 3.6 0',shade(c,-0.3),0.7);
+  s+=P('M27 44 Q22 47 24 50 L30 47Z','#fafaf9');
+  s+=P('M40 22 Q60 18 62 36 Q63 52 48 54 Q42 52 41 44 Q38 32 40 22Z',shade(c,-0.06))+P('M44 27 Q56 25 57 37 Q57 47 48 48 Q45 46 44 40Z','#f5b8c4',' opacity=".5"');
+  s+=eye(29,31,2.3);
+  return s+`</svg>`;})();
+
+ // Hase (sitzend)
+ SV.hase=(()=>{const c='#c8a27a',in_='#f9a8d4';let s=`<svg viewBox="0 0 70 72">`;
+  s+=E(56,52,5,4.6,'#ffffff');
+  s+=P('M30 30 Q28 8 34 2 Q38 0 38 8 Q38 20 35 30Z',shade(c,-0.15))+P('M24 30 Q18 8 23 2 Q27 0 29 8 Q31 20 30 30Z',c)+P('M25 26 Q21 10 24 5 Q26 4 27 10 Q28 20 28.5 26Z',in_,' opacity=".75"');
+  s+=E(42,52,17,16,c)+hl(38,42,9,5,0.28)+E(48,60,11,10,c)+E(49,69.5,10,2.4,shade(c,0.1))+lo(44,66,12,3,0.12);
+  s+=E(33,61,4,7,shade(c,0.05))+E(26,62,4,7,c)+E(26,68.5,4.4,2,shade(c,0.12));
+  s+=E(26,36,11,10,c)+hl(23,31,5,3,0.3)+E(19,40,4.2,3.4,'#f3e6d6')+E(15.6,38.4,1.6,1.3,'#f472b6')+Ln('M16 40 q2 2 4 0.6',shade(c,-0.45),0.6)+eye(22,34,2);
+  s+=Ln('M18 39.5 L9 38 M18 41 L9 42.5','#ffffff',0.4,' opacity=".8"');
+  return s+`</svg>`;})();
+
+ // Maus
+ SV.maus=(()=>{const c='#9ca3af';let s=`<svg viewBox="0 0 76 40">`;
+  s+=Ln('M50 30 C62 32 66 22 74 18','#f9a8d4',1.4);
+  s+=E(36,28,15,10,c)+hl(33,22,8,3,0.3)+E(44,33,6,5,c);
+  s+=E(28,37,3,1.6,'#f9a8d4')+E(44,37.6,3.6,1.6,'#f9a8d4');
+  s+=E(20,25,8,7,c)+P('M14 27 L7 29 Q6 31 8 31 L15 30Z',c)+E(7.2,30,1.4,1.2,'#f472b6');
+  s+=E(24,16,6,6,shade(c,-0.08))+E(24,16.4,4,4,'#f9a8d4');
+  s+=eye(15,25,1.5)+Ln('M10 29 L2 27 M10 30.5 L2 32','#4b5563',0.35);
+  return s+`</svg>`;})();
+
+ // Igel
+ SV.igel=(()=>{const sp='#5b3a1f',c='#d6b48c';let s=`<svg viewBox="0 0 70 44">`;
+  s+=E(40,30,23,12,shade(sp,0.1));
+  for(let i=0;i<34;i++){const a=Math.PI*(0.98+i/33*1.04),r=21+((i*7)%3)*1.2,x=40+Math.cos(a)*r,y=31+Math.sin(a)*r*0.62;
+   const x0=40+Math.cos(a)*(r-7),y0=31+Math.sin(a)*(r-7)*0.62;s+=Ln(`M${f(x0)} ${f(y0)} L${f(x+Math.cos(a)*4)} ${f(y+Math.sin(a)*3)}`,i%3?sp:shade(sp,0.35),2);}
+  s+=E(40,31,19,9,shade(sp,0.15))+hl(38,25,12,3,0.2);
+  s+=P('M24 26 Q14 26 6 33 Q5 36 9 36 Q18 38 26 36Z',c)+E(6,34.2,2,1.7,'#1b120a')+eye(15,30,1.5);
+  s+=E(30,40,3,2,c)+E(48,40.4,3,2,c);
+  return s+`</svg>`;})();
+
+ // Schildkröte
+ SV.schildi=(()=>{const c='#65a30d',sh='#a16207';let s=`<svg viewBox="0 0 74 42">`;
+  s+=P('M60 30 L70 31 L60 34Z',c)+E(24,38,4,3.4,shade(c,-0.15))+E(54,38,4,3.4,shade(c,-0.15));
+  s+=P('M14 32 Q16 8 38 7 Q60 8 62 32Z',sh)+P('M14 32 Q38 36 62 32 L62 34 Q38 38 14 34Z',shade(sh,0.25));
+  const hx=[[30,16],[42,15],[24,25],[37,25],[50,25]];hx.forEach(([x,y])=>s+=P(`M${x-5} ${y} L${x-2.5} ${y-4.2} L${x+2.5} ${y-4.2} L${x+5} ${y} L${x+2.5} ${y+4.2} L${x-2.5} ${y+4.2}Z`,shade(sh,0.18),` stroke="${shade(sh,-0.3)}" stroke-width=".8"`));
+  s+=hl(32,14,14,4,0.25)+E(20,38,4.4,3.6,c)+E(50,38,4.4,3.6,c);
+  s+=P('M16 28 Q8 22 4 26 Q2 31 7 32 Q12 33 16 32Z',c)+eye(7,26.5,1.4)+Ln('M3.5 29.4 q1.5 1 3 0.4',shade(c,-0.4),0.6);
+  return s+`</svg>`;})();
+
+ // Affe (sitzend)
+ SV.affe=(()=>{const c='#7c4a26',fc='#e8c39e';let s=`<svg viewBox="0 0 72 74">`;
+  s+=Ln('M50 62 C66 62 68 46 60 40 C55 36 52 44 57 46',c,3.2);
+  s+=E(40,52,15,17,c)+hl(36,42,7,5,0.25)+E(37,56,9,11,fc,' opacity=".85"');
+  s+=E(28,70,7,3,shade(c,-0.1))+E(48,70,7,3,shade(c,-0.1))+Ln('M28 46 Q20 56 26 64',c,5)+E(26,65,3,2.6,fc);
+  s+=E(14,26,5,5.4,c)+E(14,26,3,3.4,fc)+E(48,26,5,5.4,shade(c,-0.12));
+  s+=E(31,26,15,14,c)+hl(27,19,7,4,0.28)+P('M18 26 Q18 16 26 17 Q31 19 31 22 Q31 19 36 17 Q43 16 43 26 Q44 38 31 39 Q17 38 18 26Z',fc);
+  s+=eye(25,25,2)+eye(36,25,2)+E(30.5,31,1,0.7,'#5b3a1f')+E(29,31,1,0.7,'#5b3a1f')+Ln('M25 34 q5.5 3.6 11 0',shade(fc,-0.5),0.9);
+  return s+`</svg>`;})();
+
+ // Känguru (aufrecht)
+ SV.kaenguru=(()=>{const c='#c2763a',b='#f2cfa6';let s=`<svg viewBox="0 0 80 104">`;
+  s+=P('M48 70 Q70 80 79 101 L73 102 Q64 86 46 80Z',c);
+  s+=E(44,64,15,22,c,' transform="rotate(10 44 64)"')+E(39,68,9,16,b,' transform="rotate(10 39 68)" opacity=".85"')+hl(42,50,7,8,0.25);
+  s+=E(50,82,12,14,c)+P('M42 94 L22 99 Q18 102 22 103 L48 103Z',shade(c,-0.1))+P('M46 90 L30 100 Q28 103 31 103 L52 102Z',c);
+  s+=Ln('M33 54 Q26 58 24 64',c,3.4)+Ln('M36 58 Q30 62 28 67',shade(c,-0.12),3.2);
+  s+=P('M38 48 Q33 38 31 30 L41 28 Q43 38 47 44Z',c)+'<g transform="translate(6 9)">';
+  s+=P('M30 18 Q30 10 24 12 Q16 15 10 22 Q8 26 12 27 L22 27 Q32 26 34 20Z',c)+hl(23,15,5,2.5,0.3)+E(9.6,23.6,1.4,1.1,'#1b120a')+eye(21,18,1.8);
+  s+=E(27,7,2.6,6.4,shade(c,-0.12),' transform="rotate(-10 27 7)"')+E(31,8,2.6,6.4,c,' transform="rotate(10 31 8)"')+E(31,8.6,1.2,4.2,'#f2cfa6',' transform="rotate(10 31 8.6)"')+'</g>';
+  return s+`</svg>`;})();
+
+ // Vögel
+ SV.huhn=bird({c:'#f8f5ef',w:'#e7e0d2',beak:'#f59e0b',legC:'#f59e0b',W:62,H:56,bx:34,by:33,brx:15,bry:12.5,hr:7.2,
+   tailSvg:(bx,by,brx)=>P(`M${bx+brx-4} ${by-2} Q${bx+brx+8} ${by-20} ${bx+brx+10} ${by-14} Q${bx+brx+9} ${by-4} ${bx+brx+2} ${by+4}Z`,'#e7e0d2')+Ln(`M${bx+brx} ${by-6} q5 -8 9 -9`,'#d6cfc0',0.8),
+   extra:(hx,hy,hr)=>E(hx-1,hy-hr-0.6,2.2,2.2,'#ef4444')+E(hx+2.6,hy-hr+0.2,2,2,'#ef4444')+E(hx-3.6,hy-hr+0.8,1.8,1.8,'#ef4444')+E(hx-hr+1.4,hy+4.6,1.6,2.6,'#ef4444')});
+ SV.ente=bird({c:'#fde047',w:'#facc15',beak:'#f97316',legC:'#f97316',webbed:1,W:64,H:56,bx:36,by:34,brx:17,bry:11.5,hr:7.4,hy:20,
+   beakSvg:(hx,hy,hr,bk)=>P(`M${f(hx-hr+1.5)} ${f(hy-0.5)} Q${f(hx-hr-7)} ${f(hy-1.4)} ${f(hx-hr-7.5)} ${f(hy+1.6)} Q${f(hx-hr-4)} ${f(hy+3.6)} ${f(hx-hr+1.5)} ${f(hy+3)}Z`,bk)+Ln(`M${f(hx-hr+1)} ${f(hy+1.5)} L${f(hx-hr-7)} ${f(hy+1.5)}`,shade(bk,-0.3),0.5),
+   tailSvg:(bx,by,brx)=>P(`M${bx+brx-4} ${by-3} L${bx+brx+7} ${by-9} L${bx+brx+3} ${by+2}Z`,'#facc15')});
+ SV.papagei=bird({c:'#22c55e',w:'#2563eb',headC:'#ef4444',beak:'#1f2937',legC:'#57534e',W:56,H:86,bx:30,by:40,brx:11,bry:16,hx:24,hy:20,hr:8,
+   beakSvg:(hx,hy,hr,bk)=>P(`M${hx-hr+2} ${hy-3} Q${hx-hr-6} ${hy-3} ${hx-hr-4} ${hy+5} Q${hx-hr-2} ${hy+3} ${hx-hr+1} ${hy+3}Z`,'#f5f5f4')+P(`M${hx-hr-4} ${hy+5} Q${hx-hr-4} ${hy+2.4} ${hx-hr-2.4} ${hy+2.6}Z`,'#a8a29e'),
+   tailSvg:(bx,by,brx,bry)=>P(`M${bx+2} ${by+bry-4} L${bx+14} ${by+bry+28} L${bx+8} ${by+bry+28} L${bx-3} ${by+bry-3}Z`,'#2563eb')+P(`M${bx+4} ${by+bry-4} L${bx+19} ${by+bry+24} L${bx+15} ${by+bry+25} L${bx+1} ${by+bry-2}Z`,'#ef4444'),
+   extra:(hx,hy)=>E(hx-2.6,hy-1.5,3.2,3,'#ffffff',' opacity=".9"')+eye(hx-2.6,hy-1.5,1.5)});
+ SV.pinguin=(()=>{let s=`<svg viewBox="0 0 54 80">`;
+  s+=E(16,78.4,6,2,'#f59e0b')+E(32,78.6,6,2,'#f59e0b');
+  s+=E(27,48,17,28,'#1f2937')+E(23,52,11.5,23,'#f8fafc')+hl(22,34,8,6,0.25)+E(39,48,5,14,'#111827',' transform="rotate(14 39 48)"');
+  s+=E(25,18,12,12,'#1f2937')+hl(21,13,5,3,0.3)+E(20,20,6.5,6,'#f8fafc',' opacity=".95"')+P('M13 18 L4 21 L13 23Z','#f59e0b')+eye(17,16,1.9)+E(30,25,4,2.4,'#fbbf24',' opacity=".55"');
+  return s+`</svg>`;})();
+ const smallBird=(c,w,extra)=>bird({c,w,belly:'#f8fafc',beak:'#f59e0b',legC:'#a16207',W:50,H:44,bx:26,by:24,brx:12,bry:9.5,hr:6.6,hy:13,extra});
+ SV.pipa=smallBird('#60a5fa','#2563eb',(hx,hy)=>`<text x="${hx-16}" y="${hy-4}" font-size="11">🎵</text>`);
+ SV.tigo=SV.tiger.replace('</svg>',`<g transform="translate(29 18)"><path d="M0 0 L-7 -5 L-7 5Z M0 0 L7 -5 L7 5Z" fill="#ec4899"/><circle r="2.4" fill="#be185d"/></g></svg>`);
+ return SV;
+})();
+Object.assign(ASVG,TV);
+// Emoji-Tiere auf die neuen Zeichnungen umstellen; Größe so, dass die längere Seite der alten Emoji-Größe entspricht
+Object.keys(TV).forEach(k=>{const A=ANIMALS[k];if(!A)return;const v=TV[k].match(/viewBox="([^"]+)"/)[1].split(' ').map(Number);
+ A.s=k;A.ar=+(v[2]/v[3]).toFixed(3);A.sz=+(A.sz*1.22*v[3]/Math.max(v[2],v[3])).toFixed(1);delete A.deco;});
 Object.keys(ASVG).forEach(k=>{const sv=ASVG[k];if(sv.includes('data-noshade'))return;const i=sv.indexOf('>')+1,j=sv.lastIndexOf('</svg>');const inner=sv.slice(i,j);
  const ov=inner.replace(/fill="#(?:[0-9a-fA-F]{3}){1,2}"/g,'fill="url(#g3r)"').replace(/stroke="[^"]*"/g,'stroke="none"');ASVG[k]=sv.slice(0,j)+`<g opacity=".75">${ov}</g></svg>`;});
 
