@@ -349,7 +349,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
-const APP_VERSION='2026-11-14c'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
+const APP_VERSION='2026-11-14d'; // bei jedem Update erhöhen (siehe „Automatische Updates“ unten)
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 const canSave=(()=>{try{localStorage.setItem('_st','1');localStorage.removeItem('_st');return true}catch(e){return false}})();
 
@@ -1740,6 +1740,7 @@ function loadWishes(){const w=lsGet(WKEY,[]);return Array.isArray(w)?w:[];}
 function wishText(list){return 'Sternenstadt-Wünsche:\n'+list.map(w=>'- '+(w.who?w.who+': ':'')+w.text+' ('+new Date(w.t).toLocaleDateString('de-DE')+')').join('\n');}
 let wRec=null,wSending=false,wNote='';
 const VKEY='sternenstadt-vermittler';
+const VERMITTLER_URL='https://sternenstadt-vermittler.tonatz79.workers.dev';
 function vermittler(){const v=lsGet(VKEY);return v&&v.url&&v.code?v:null;}
 async function vPost(v,path,body){
  const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),12000);
@@ -1763,9 +1764,9 @@ async function sendWishes(){
 function showPairing(){
  const v=lsGet(VKEY)||{};
  showScreen(`<div class="card" style="text-align:left"><h2 style="text-align:center">🔗 Tablet koppeln</h2>
-  <p style="font-size:15px">Für Mama und Papa: Damit gehen die Wünsche automatisch an euren Vermittler und landen auf GitHub. Adresse und Kopplungscode stehen in der Anleitung (vermittler/README.md).</p>
+  <p style="font-size:15px">Für Mama und Papa: Damit gehen die Wünsche automatisch an euren Vermittler und landen auf GitHub. Die Adresse ist schon eingetragen – nur noch den Kopplungscode eingeben.</p>
   <p style="margin:8px 0 2px"><b>Adresse des Vermittlers</b></p>
-  <input id="pUrl" value="${esc(v.url||'')}" placeholder="https://….workers.dev" inputmode="url" autocapitalize="off" spellcheck="false" style="width:100%;font-size:16px;border-radius:12px;border:2px solid #ddd6fe;padding:8px">
+  <input id="pUrl" value="${esc(v.url||VERMITTLER_URL)}" placeholder="https://….workers.dev" inputmode="url" autocapitalize="off" spellcheck="false" style="width:100%;font-size:16px;border-radius:12px;border:2px solid #ddd6fe;padding:8px">
   <p style="margin:8px 0 2px"><b>Kopplungscode</b></p>
   <input id="pCode" type="password" value="${esc(v.code||'')}" autocapitalize="off" spellcheck="false" style="width:100%;font-size:16px;border-radius:12px;border:2px solid #ddd6fe;padding:8px">
   <button class="bigbtn" id="pSave">✅ Prüfen und koppeln</button>
